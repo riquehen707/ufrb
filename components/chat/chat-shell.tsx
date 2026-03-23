@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowLeft,
   BusFront,
-  Clock3,
   GraduationCap,
   MapPin,
   MessageCircleMore,
+  MoreVertical,
   PackageSearch,
+  Plus,
   Search,
   Send,
   ShieldCheck,
@@ -16,6 +18,7 @@ import {
 import styles from "@/components/chat/chat-shell.module.scss";
 
 type ThreadScope = "all" | "products" | "classes" | "transport";
+type MobileStage = "list" | "thread";
 
 type MessageItem = {
   id: string;
@@ -58,7 +61,7 @@ const threads: ChatThread[] = [
     campus: "Cruz das Almas",
     time: "agora",
     unread: 2,
-    status: "Negociacao ativa",
+    status: "Responde rapido",
     snippet: "Fecho por R$ 2.150 se tu conseguir buscar ainda hoje no campus.",
     actions: ["Mandar proposta", "Pedir fotos", "Ver anuncio"],
     messages: [
@@ -216,8 +219,35 @@ function getInitials(value: string) {
 export function ChatShell() {
   const [scope, setScope] = useState<ThreadScope>("all");
   const [query, setQuery] = useState("");
+  const [draft, setDraft] = useState("");
   const [selectedThreadId, setSelectedThreadId] = useState(threads[0]?.id ?? "");
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileStage, setMobileStage] = useState<MobileStage>("list");
   const normalizedQuery = query.trim().toLowerCase();
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 980px)");
+
+    const syncViewport = (matches: boolean) => {
+      setIsMobile(matches);
+
+      if (!matches) {
+        setMobileStage("list");
+      }
+    };
+
+    syncViewport(mediaQuery.matches);
+
+    const listener = (event: MediaQueryListEvent) => {
+      syncViewport(event.matches);
+    };
+
+    mediaQuery.addEventListener("change", listener);
+
+    return () => {
+      mediaQuery.removeEventListener("change", listener);
+    };
+  }, []);
 
   const filteredThreads = useMemo(() => {
     return threads.filter((thread) => {
@@ -248,181 +278,248 @@ export function ChatShell() {
     filteredThreads[0] ??
     null;
 
-  const unreadCount = threads.reduce((total, thread) => total + thread.unread, 0);
-  const activeCount = threads.length;
-  const todayCount = threads.filter((thread) => thread.time === "agora" || thread.time.includes("min")).length;
+  function openThread(threadId: string) {
+    setSelectedThreadId(threadId);
+
+    if (isMobile) {
+      setMobileStage("thread");
+    }
+  }
+
+  function closeThread() {
+    setMobileStage("list");
+  }
+
+  const resolvedMobileStage =
+    !selectedThread && mobileStage === "thread" ? "list" : mobileStage;
+  const showListPanel = !isMobile || resolvedMobileStage === "list";
+  const showThreadPanel = !isMobile || resolvedMobileStage === "thread";
+  const totalUnread = threads.reduce((total, thread) => total + thread.unread, 0);
 
   return (
     <section className={styles.shell}>
-      <div className={styles.topbar}>
-        <div className={styles.heading}>
-          <span className="eyebrow">Chat CAMPUS</span>
-          <h1 className={styles.title}>Conversas em andamento</h1>
-          <p className={styles.lead}>Produtos, aulas e rotas.</p>
-        </div>
+      {showListPanel ? (
+        <>
+          <header className={styles.topbar}>
+            <div className={styles.heading}>
+              <span className="eyebrow">Chat</span>
+              <h1 className={styles.title}>Conversas</h1>
+              <p className={styles.lead}>Negociacoes, aulas e combinados.</p>
+            </div>
 
-        <div className={styles.metrics}>
-          <article className={styles.metricCard}>
-            <MessageCircleMore size={16} />
-            <strong>{activeCount}</strong>
-            <span>abertas</span>
-          </article>
-          <article className={styles.metricCard}>
-            <ShieldCheck size={16} />
-            <strong>{unreadCount}</strong>
-            <span>nao lidas</span>
-          </article>
-          <article className={styles.metricCard}>
-            <Clock3 size={16} />
-            <strong>{todayCount}</strong>
-            <span>de hoje</span>
-          </article>
-        </div>
-      </div>
+            <div className={styles.topMeta}>
+              <span className={styles.unreadPill}>
+                <ShieldCheck size={14} />
+                {totalUnread} nao lidas
+              </span>
+            </div>
+          </header>
 
-      <div className={styles.commandBar}>
-        <label className={styles.searchField}>
-          <Search size={16} />
-          <input
-            type="search"
-            placeholder="Buscar conversa, pessoa ou anuncio"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </label>
+          <div className={styles.commandBar}>
+            <label className={styles.searchField}>
+              <Search size={16} />
+              <input
+                type="search"
+                placeholder="Buscar conversa ou pessoa"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </label>
 
-        <div className={styles.scopeRow} aria-label="Filtrar conversas">
-          {scopeOptions.map((option) => {
-            const Icon = option.icon;
+            <div className={styles.scopeRow} aria-label="Filtrar conversas">
+              {scopeOptions.map((option) => {
+                const Icon = option.icon;
 
-            return (
-              <button
-                key={option.id}
-                type="button"
-                className={`${styles.scopeButton} ${
-                  scope === option.id ? styles.scopeButtonActive : ""
-                }`}
-                onClick={() => setScope(option.id)}
-              >
-                <Icon size={16} />
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={`${styles.scopeButton} ${
+                      scope === option.id ? styles.scopeButtonActive : ""
+                    }`}
+                    onClick={() => setScope(option.id)}
+                  >
+                    <Icon size={16} />
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      ) : null}
 
       <div className={styles.layout}>
-        <section className={styles.threadPanel}>
-          <div className={styles.sectionHeader}>
-            <strong>{filteredThreads.length} conversas</strong>
-            <span>{scope === "all" ? "Tudo no mesmo lugar" : "Filtro ativo"}</span>
-          </div>
+        {showListPanel ? (
+          <section className={styles.threadPanel}>
+            <div className={styles.sectionHeader}>
+              <strong>{filteredThreads.length} conversas</strong>
+              <span>{scope === "all" ? "Recentes" : "Filtro ativo"}</span>
+            </div>
 
-          <div className={styles.threadList}>
-            {filteredThreads.map((thread) => {
-              const Icon = getScopeIcon(thread.scope);
+            <div className={styles.threadList}>
+              {filteredThreads.map((thread) => {
+                const Icon = getScopeIcon(thread.scope);
 
-              return (
-                <button
-                  key={thread.id}
-                  type="button"
-                  className={`${styles.threadCard} ${
-                    selectedThread?.id === thread.id ? styles.threadCardActive : ""
-                  }`}
-                  onClick={() => setSelectedThreadId(thread.id)}
-                >
-                  <div className={styles.threadAvatar}>{getInitials(thread.counterpart)}</div>
+                return (
+                  <button
+                    key={thread.id}
+                    type="button"
+                    className={`${styles.threadCard} ${
+                      selectedThread?.id === thread.id ? styles.threadCardActive : ""
+                    }`}
+                    onClick={() => openThread(thread.id)}
+                  >
+                    <div className={styles.threadAvatar}>{getInitials(thread.counterpart)}</div>
 
-                  <div className={styles.threadContent}>
-                    <div className={styles.threadTopline}>
-                      <strong>{thread.title}</strong>
-                      <span>{thread.time}</span>
+                    <div className={styles.threadContent}>
+                      <div className={styles.threadTopline}>
+                        <strong>{thread.counterpart}</strong>
+                        <span>{thread.time}</span>
+                      </div>
+
+                      <div className={styles.threadMeta}>
+                        <span className={styles.threadContext}>
+                          <Icon size={14} />
+                          {thread.title}
+                        </span>
+                        <span>{thread.status}</span>
+                      </div>
+
+                      <p>{thread.snippet}</p>
                     </div>
 
-                    <div className={styles.threadMeta}>
-                      <span className={styles.threadScope}>
-                        <Icon size={14} />
-                        {getScopeLabel(thread.scope)}
-                      </span>
-                      <span>{thread.counterpart}</span>
-                    </div>
-
-                    <p>{thread.snippet}</p>
-                  </div>
-
-                  <div className={styles.threadSide}>
-                    <span className={styles.threadStatus}>{thread.status}</span>
                     {thread.unread ? (
                       <span className={styles.unreadBadge}>{thread.unread}</span>
                     ) : null}
+                  </button>
+                );
+              })}
+
+              {!filteredThreads.length ? (
+                <div className={styles.emptyState}>
+                  <strong>Nada por aqui.</strong>
+                  <p>Tenta outro filtro.</p>
+                </div>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
+        {showThreadPanel ? (
+          <aside className={styles.previewPanel}>
+            {selectedThread ? (
+              <>
+                <div className={styles.chatHeader}>
+                  <div className={styles.chatHeaderMain}>
+                    {isMobile ? (
+                      <button
+                        type="button"
+                        className={styles.iconButton}
+                        onClick={closeThread}
+                        aria-label="Voltar para conversas"
+                      >
+                        <ArrowLeft size={18} />
+                      </button>
+                    ) : null}
+
+                    <div className={styles.threadAvatarLarge}>
+                      {getInitials(selectedThread.counterpart)}
+                    </div>
+
+                    <div className={styles.chatHeaderCopy}>
+                      <strong>{selectedThread.counterpart}</strong>
+                      <span>{selectedThread.status}</span>
+                    </div>
                   </div>
-                </button>
-              );
-            })}
 
-            {!filteredThreads.length ? (
-              <div className={styles.emptyState}>
-                <strong>Nada por aqui.</strong>
-                <p>Tenta outro filtro.</p>
-              </div>
-            ) : null}
-          </div>
-        </section>
-
-        <aside className={styles.previewPanel}>
-          {selectedThread ? (
-            <>
-              <div className={styles.previewHeader}>
-                <div>
-                  <span className="eyebrow">{getScopeLabel(selectedThread.scope)}</span>
-                  <h2>{selectedThread.title}</h2>
-                  <p>{selectedThread.counterpart}</p>
+                  <button
+                    type="button"
+                    className={styles.iconButton}
+                    aria-label="Mais opcoes"
+                  >
+                    <MoreVertical size={18} />
+                  </button>
                 </div>
 
-                <div className={styles.previewMeta}>
-                  <span>
+                <div className={styles.chatInfoRow}>
+                  <span className={styles.infoChip}>{selectedThread.title}</span>
+                  <span className={styles.infoChip}>
                     <MapPin size={14} />
                     {selectedThread.campus}
                   </span>
-                  <span>{selectedThread.status}</span>
+                  <span className={styles.infoChip}>
+                    <ShieldCheck size={14} />
+                    {getScopeLabel(selectedThread.scope)}
+                  </span>
                 </div>
-              </div>
 
-              <div className={styles.messageStack}>
-                {selectedThread.messages.map((message) => (
-                  <article
-                    key={message.id}
-                    className={`${styles.messageBubble} ${
-                      message.author === "me" ? styles.messageBubbleMine : ""
-                    }`}
+                <div className={styles.quickActionRow}>
+                  {selectedThread.actions.map((action) => (
+                    <button key={action} type="button" className={styles.quickAction}>
+                      {action}
+                    </button>
+                  ))}
+                </div>
+
+                <div className={styles.messageViewport}>
+                  <div className={styles.dayMarker}>Hoje</div>
+
+                  {selectedThread.messages.map((message) => (
+                    <article
+                      key={message.id}
+                      className={`${styles.messageBubble} ${
+                        message.author === "me" ? styles.messageBubbleMine : ""
+                      }`}
+                    >
+                      <p>{message.text}</p>
+                      <span>{message.time}</span>
+                    </article>
+                  ))}
+                </div>
+
+                <form
+                  className={styles.composerBar}
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    setDraft("");
+                  }}
+                >
+                  <button
+                    type="button"
+                    className={styles.composerIcon}
+                    aria-label="Mais acoes"
                   >
-                    <p>{message.text}</p>
-                    <span>{message.time}</span>
-                  </article>
-                ))}
-              </div>
-
-              <div className={styles.previewActions}>
-                {selectedThread.actions.map((action) => (
-                  <button key={action} type="button" className={styles.actionButton}>
-                    {action}
+                    <Plus size={18} />
                   </button>
-                ))}
-              </div>
 
-              <button type="button" className={styles.sendButton}>
-                <Send size={16} />
-                Abrir conversa
-              </button>
-            </>
-          ) : (
-            <div className={styles.emptyState}>
-              <strong>Nenhuma conversa selecionada.</strong>
-              <p>Abre uma conversa da lista.</p>
-            </div>
-          )}
-        </aside>
+                  <label className={styles.composerField}>
+                    <input
+                      type="text"
+                      placeholder="Escreve uma mensagem"
+                      value={draft}
+                      onChange={(event) => setDraft(event.target.value)}
+                    />
+                  </label>
+
+                  <button
+                    type="submit"
+                    className={styles.sendButton}
+                    disabled={!draft.trim()}
+                    aria-label="Enviar mensagem"
+                  >
+                    <Send size={18} />
+                  </button>
+                </form>
+              </>
+            ) : (
+              <div className={styles.emptyState}>
+                <strong>Nenhuma conversa selecionada.</strong>
+                <p>Abre uma conversa da lista.</p>
+              </div>
+            )}
+          </aside>
+        ) : null}
       </div>
     </section>
   );

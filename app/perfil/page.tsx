@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { ProfileHub } from "@/components/profile/profile-hub";
+import { getCurrentProfileActivity } from "@/lib/profile-activity";
 import { PageShell } from "@/components/shell/page-shell";
 import { getProfileListings, getCurrentProfile } from "@/lib/profiles";
 
@@ -22,13 +23,31 @@ function readSingleValue(value?: string | string[]) {
 export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   const params = await searchParams;
   const { profile } = await getCurrentProfile();
-  const listings = profile ? await getProfileListings(profile.id, { limit: 4 }) : [];
+  const [listings, activity] = profile
+    ? await Promise.all([
+        getProfileListings(profile.id, { limit: 12 }),
+        getCurrentProfileActivity(profile.id),
+      ])
+    : [
+        [],
+        {
+          recentPurchases: [],
+          recentSales: [],
+          pendingReviews: [],
+          receivedReviews: [],
+        },
+      ];
   const savedNotice = readSingleValue(params.salvo) === "1";
 
   return (
     <PageShell mainClassName="section">
       <div className="container page-stack">
-        <ProfileHub profile={profile} listings={listings} savedNotice={savedNotice} />
+        <ProfileHub
+          profile={profile}
+          listings={listings}
+          activity={activity}
+          savedNotice={savedNotice}
+        />
       </div>
     </PageShell>
   );

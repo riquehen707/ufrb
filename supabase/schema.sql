@@ -10,37 +10,6 @@ begin
 end;
 $$;
 
-create or replace function public.sync_housing_profile_rating()
-returns trigger
-language plpgsql
-as $$
-declare
-  target_profile uuid;
-begin
-  target_profile := coalesce(new.reviewed_profile_id, old.reviewed_profile_id);
-
-  update public.profiles
-  set
-    housing_rating = coalesce(
-      (
-        select round(avg(rating)::numeric, 2)
-        from public.housing_reviews
-        where reviewed_profile_id = target_profile
-      ),
-      0
-    ),
-    housing_review_count = (
-      select count(*)
-      from public.housing_reviews
-      where reviewed_profile_id = target_profile
-    ),
-    updated_at = now()
-  where id = target_profile;
-
-  return coalesce(new, old);
-end;
-$$;
-
 create or replace function public.sync_profile_support_summary()
 returns trigger
 language plpgsql
@@ -229,6 +198,89 @@ alter table public.donations
   add column if not exists cancelled_at timestamptz,
   add column if not exists updated_at timestamptz not null default now();
 
+create table if not exists public.marketplace_orders (
+  id uuid primary key default gen_random_uuid(),
+  listing_id uuid references public.listings(id) on delete set null,
+  buyer_profile_id uuid not null references public.profiles(id) on delete cascade,
+  seller_profile_id uuid not null references public.profiles(id) on delete cascade,
+  order_type text not null check (order_type in ('product', 'service')),
+  amount numeric(10,2) not null check (amount >= 0),
+  quantity integer not null default 1 check (quantity > 0),
+  status text not null default 'pending' check (status in ('pending', 'confirmed', 'completed', 'cancelled')),
+  note text,
+  completed_at timestamptz,
+  reviewed_by_buyer_at timestamptz,
+  reviewed_by_seller_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.marketplace_orders
+  add column if not exists listing_id uuid references public.listings(id) on delete set null,
+  add column if not exists buyer_profile_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists seller_profile_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists order_type text,
+  add column if not exists amount numeric(10,2) not null default 0,
+  add column if not exists quantity integer not null default 1,
+  add column if not exists status text not null default 'pending',
+  add column if not exists note text,
+  add column if not exists completed_at timestamptz,
+  add column if not exists reviewed_by_buyer_at timestamptz,
+  add column if not exists reviewed_by_seller_at timestamptz,
+  add column if not exists updated_at timestamptz not null default now();
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'marketplace_orders_status_check'
+  ) then
+    alter table public.marketplace_orders
+      drop constraint marketplace_orders_status_check;
+  end if;
+
+  alter table public.marketplace_orders
+    add constraint marketplace_orders_status_check
+    check (status in ('pending', 'confirmed', 'completed', 'cancelled'));
+exception
+  when duplicate_object then
+    null;
+end;
+$$;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'marketplace_orders_order_type_check'
+  ) then
+    alter table public.marketplace_orders
+      drop constraint marketplace_orders_order_type_check;
+  end if;
+
+  alter table public.marketplace_orders
+    add constraint marketplace_orders_order_type_check
+    check (order_type in ('product', 'service'));
+exception
+  when duplicate_object then
+    null;
+end;
+$$;
+
+create table if not exists public.marketplace_reviews (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null references public.marketplace_orders(id) on delete cascade,
+  reviewer_id uuid not null references public.profiles(id) on delete cascade,
+  reviewed_profile_id uuid not null references public.profiles(id) on delete cascade,
+  review_type text not null check (review_type in ('product', 'service')),
+  rating numeric(3,2) not null check (rating >= 1 and rating <= 5),
+  comment text,
+  created_at timestamptz not null default now(),
+  unique (order_id, reviewer_id)
+);
+
 do $$
 begin
   if exists (
@@ -266,6 +318,99 @@ create table if not exists public.housing_reviews (
   unique (reviewer_id, reviewed_profile_id, listing_id)
 );
 
+create or replace function public.refresh_profile_review_summary(target_profile uuid)
+returns void
+language plpgsql
+as $$
+begin
+  update public.profiles
+  set
+    product_rating = coalesce(
+      (
+        select round(avg(rating)::numeric, 2)
+        from public.marketplace_reviews
+        where reviewed_profile_id = target_profile
+          and review_type = 'product'
+      ),
+      5
+    ),
+    service_rating = coalesce(
+      (
+        select round(avg(rating)::numeric, 2)
+        from public.marketplace_reviews
+        where reviewed_profile_id = target_profile
+          and review_type = 'service'
+      ),
+      5
+    ),
+    housing_rating = coalesce(
+      (
+        select round(avg(rating)::numeric, 2)
+        from public.housing_reviews
+        where reviewed_profile_id = target_profile
+      ),
+      0
+    ),
+    housing_review_count = (
+      select count(*)
+      from public.housing_reviews
+      where reviewed_profile_id = target_profile
+    ),
+    reliability_score = coalesce(
+      (
+        select round(avg(rating)::numeric, 2)
+        from (
+          select rating::numeric as rating
+          from public.marketplace_reviews
+          where reviewed_profile_id = target_profile
+          union all
+          select rating::numeric as rating
+          from public.housing_reviews
+          where reviewed_profile_id = target_profile
+        ) ratings
+      ),
+      5
+    ),
+    review_count = (
+      select count(*)
+      from public.marketplace_reviews
+      where reviewed_profile_id = target_profile
+    ) + (
+      select count(*)
+      from public.housing_reviews
+      where reviewed_profile_id = target_profile
+    ),
+    updated_at = now()
+  where id = target_profile;
+end;
+$$;
+
+create or replace function public.sync_housing_profile_rating()
+returns trigger
+language plpgsql
+as $$
+declare
+  target_profile uuid;
+begin
+  target_profile := coalesce(new.reviewed_profile_id, old.reviewed_profile_id);
+  perform public.refresh_profile_review_summary(target_profile);
+  return coalesce(new, old);
+end;
+$$;
+
+create or replace function public.sync_marketplace_profile_rating()
+returns trigger
+language plpgsql
+as $$
+declare
+  target_profile uuid;
+begin
+  target_profile := coalesce(new.reviewed_profile_id, old.reviewed_profile_id);
+  perform public.refresh_profile_review_summary(target_profile);
+  return coalesce(new, old);
+end;
+$$;
+
 create index if not exists listings_feed_idx
 on public.listings (status, featured desc, created_at desc);
 
@@ -283,6 +428,15 @@ on public.donations (status, confirmed_at desc);
 
 create index if not exists donations_supporter_idx
 on public.donations (supporter_profile_id, status, created_at desc);
+
+create index if not exists marketplace_orders_participants_idx
+on public.marketplace_orders (buyer_profile_id, seller_profile_id, created_at desc);
+
+create index if not exists marketplace_orders_status_idx
+on public.marketplace_orders (status, completed_at desc);
+
+create index if not exists marketplace_reviews_reviewed_idx
+on public.marketplace_reviews (reviewed_profile_id, created_at desc);
 
 create index if not exists housing_reviews_reviewed_idx
 on public.housing_reviews (reviewed_profile_id, created_at desc);
@@ -311,11 +465,23 @@ before update on public.donations
 for each row
 execute procedure public.set_current_timestamp_updated_at();
 
+drop trigger if exists handle_marketplace_orders_updated_at on public.marketplace_orders;
+create trigger handle_marketplace_orders_updated_at
+before update on public.marketplace_orders
+for each row
+execute procedure public.set_current_timestamp_updated_at();
+
 drop trigger if exists handle_donations_support_sync on public.donations;
 create trigger handle_donations_support_sync
 after insert or update or delete on public.donations
 for each row
 execute procedure public.sync_profile_support_summary();
+
+drop trigger if exists handle_marketplace_reviews_sync on public.marketplace_reviews;
+create trigger handle_marketplace_reviews_sync
+after insert or update or delete on public.marketplace_reviews
+for each row
+execute procedure public.sync_marketplace_profile_rating();
 
 create or replace function public.handle_new_user()
 returns trigger
@@ -368,6 +534,8 @@ execute procedure public.handle_new_user();
 alter table public.profiles enable row level security;
 alter table public.listings enable row level security;
 alter table public.donations enable row level security;
+alter table public.marketplace_orders enable row level security;
+alter table public.marketplace_reviews enable row level security;
 alter table public.housing_reviews enable row level security;
 
 drop policy if exists "profiles_public_read" on public.profiles;
@@ -419,6 +587,49 @@ create policy "donations_supporter_read_own"
 on public.donations
 for select
 using (supporter_profile_id = (select auth.uid()));
+
+drop policy if exists "marketplace_orders_participants_read" on public.marketplace_orders;
+create policy "marketplace_orders_participants_read"
+on public.marketplace_orders
+for select
+using (
+  buyer_profile_id = (select auth.uid())
+  or seller_profile_id = (select auth.uid())
+);
+
+drop policy if exists "marketplace_orders_participants_insert" on public.marketplace_orders;
+create policy "marketplace_orders_participants_insert"
+on public.marketplace_orders
+for insert
+with check (
+  buyer_profile_id = (select auth.uid())
+  or seller_profile_id = (select auth.uid())
+);
+
+drop policy if exists "marketplace_orders_participants_update" on public.marketplace_orders;
+create policy "marketplace_orders_participants_update"
+on public.marketplace_orders
+for update
+using (
+  buyer_profile_id = (select auth.uid())
+  or seller_profile_id = (select auth.uid())
+)
+with check (
+  buyer_profile_id = (select auth.uid())
+  or seller_profile_id = (select auth.uid())
+);
+
+drop policy if exists "marketplace_reviews_public_read" on public.marketplace_reviews;
+create policy "marketplace_reviews_public_read"
+on public.marketplace_reviews
+for select
+using (true);
+
+drop policy if exists "marketplace_reviews_owner_insert" on public.marketplace_reviews;
+create policy "marketplace_reviews_owner_insert"
+on public.marketplace_reviews
+for insert
+with check ((select auth.uid()) = reviewer_id);
 
 drop policy if exists "housing_reviews_public_read" on public.housing_reviews;
 create policy "housing_reviews_public_read"

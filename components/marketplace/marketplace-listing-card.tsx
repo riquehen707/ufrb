@@ -18,7 +18,7 @@ import {
   getHousingPaymentLabel,
   housingListingKindLabels,
 } from "@/lib/housing";
-import type { Listing } from "@/lib/mock-data";
+import type { Listing } from "@/lib/listings";
 import {
   itemConditionLabels,
   listingIntentLabels,

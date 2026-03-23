@@ -19,12 +19,45 @@ export type TransportGroup = {
   id: string;
   title: string;
   routeLabel: string;
+  driverLabel: string;
+  originPointId: string;
+  destinationPointId: string;
   departureTime: string;
   seatsFilled: number;
   seatTotal: number;
   totalFare: number;
   splitFare: number;
   distanceKm: number;
+  enrollments: TransportEnrollment[];
+};
+
+export type TransportEnrollment = {
+  id: string;
+  riderName: string;
+  pickupPointId: string;
+  seatCount: number;
+};
+
+export type TransportRouteStop = {
+  pointId: string;
+  label: string;
+  pickupCount: number;
+  riderNames: string[];
+  distanceFromPreviousKm: number;
+  cumulativeDistanceKm: number;
+};
+
+export type TransportRoutePlan = {
+  startLabel: string;
+  endLabel: string;
+  pickupCount: number;
+  stopCount: number;
+  totalDistanceKm: number;
+  totalFare: number;
+  splitFare: number;
+  durationMinutes: number;
+  finalLegDistanceKm: number;
+  stops: TransportRouteStop[];
 };
 
 export type TeacherProfile = {
@@ -134,34 +167,103 @@ export const transportGroups: TransportGroup[] = [
     id: "grp-manha",
     title: "Saida da rodoviaria para o campus",
     routeLabel: "Rodoviaria -> UFRB Cruz das Almas",
+    driverLabel: "Pedro Henrique",
+    originPointId: "rodoviaria-cruz",
+    destinationPointId: "ufrb-cruz",
     departureTime: "07:10",
     seatsFilled: 3,
     seatTotal: 5,
     totalFare: 28,
     splitFare: 9.33,
     distanceKm: 3.4,
+    enrollments: [
+      {
+        id: "grp-manha-joana",
+        riderName: "Joana",
+        pickupPointId: "rodoviaria-cruz",
+        seatCount: 1,
+      },
+      {
+        id: "grp-manha-caio",
+        riderName: "Caio",
+        pickupPointId: "centro-cruz",
+        seatCount: 1,
+      },
+      {
+        id: "grp-manha-mari",
+        riderName: "Mari",
+        pickupPointId: "bairro-coplan",
+        seatCount: 1,
+      },
+    ],
   },
   {
     id: "grp-almoco",
     title: "Campus para o centro depois da aula",
     routeLabel: "UFRB Cruz das Almas -> Centro",
+    driverLabel: "Talita Souza",
+    originPointId: "ufrb-cruz",
+    destinationPointId: "centro-cruz",
     departureTime: "12:25",
     seatsFilled: 2,
     seatTotal: 4,
     totalFare: 18,
     splitFare: 9,
     distanceKm: 2.1,
+    enrollments: [
+      {
+        id: "grp-almoco-lia",
+        riderName: "Lia",
+        pickupPointId: "ufrb-cruz",
+        seatCount: 1,
+      },
+      {
+        id: "grp-almoco-davi",
+        riderName: "Davi",
+        pickupPointId: "bairro-coplan",
+        seatCount: 1,
+      },
+    ],
   },
   {
     id: "grp-noite",
     title: "Volta para bairros e republicas",
     routeLabel: "UFRB Cruz das Almas -> Coplan",
+    driverLabel: "Iago Menezes",
+    originPointId: "ufrb-cruz",
+    destinationPointId: "bairro-coplan",
     departureTime: "18:40",
     seatsFilled: 4,
     seatTotal: 5,
     totalFare: 24,
     splitFare: 6,
     distanceKm: 2.8,
+    enrollments: [
+      {
+        id: "grp-noite-iris",
+        riderName: "Iris",
+        pickupPointId: "ufrb-cruz",
+        seatCount: 1,
+      },
+      {
+        id: "grp-noite-noah",
+        riderName: "Noah",
+        pickupPointId: "centro-cruz",
+        seatCount: 1,
+      },
+      {
+        id: "grp-noite-teo",
+        riderName: "Teo",
+        pickupPointId: "rodoviaria-cruz",
+        seatCount: 1,
+      },
+      {
+        id: "grp-noite-bia",
+        riderName: "Bia",
+        pickupPointId: "bairro-coplan",
+        seatCount: 1,
+      },
+    ],
   },
 ];
 
@@ -340,6 +442,123 @@ export function estimateTransport(
     totalFare,
     splitFare,
     durationMinutes,
+  };
+}
+
+export function getRoutePointById(pointId: string) {
+  return routePoints.find((point) => point.id === pointId) ?? routePoints[0];
+}
+
+export function getTransportGroupById(groupId: string) {
+  return transportGroups.find((group) => group.id === groupId) ?? transportGroups[0];
+}
+
+export function buildTransportRoutePlan(
+  group: TransportGroup,
+  options?: {
+    customStart?: {
+      lat: number;
+      lng: number;
+      label: string;
+    } | null;
+    customDestinationId?: string;
+  },
+): TransportRoutePlan {
+  const originPoint = getRoutePointById(group.originPointId);
+  const destinationPoint = getRoutePointById(
+    options?.customDestinationId ?? group.destinationPointId,
+  );
+  const startPoint = options?.customStart ?? originPoint;
+  const pickupMap = new Map<
+    string,
+    {
+      point: RoutePoint;
+      pickupCount: number;
+      riderNames: string[];
+    }
+  >();
+
+  group.enrollments.forEach((enrollment) => {
+    const point = getRoutePointById(enrollment.pickupPointId);
+    const existing = pickupMap.get(point.id);
+
+    if (existing) {
+      existing.pickupCount += enrollment.seatCount;
+      existing.riderNames.push(enrollment.riderName);
+      return;
+    }
+
+    pickupMap.set(point.id, {
+      point,
+      pickupCount: enrollment.seatCount,
+      riderNames: [enrollment.riderName],
+    });
+  });
+
+  const remainingStops = Array.from(pickupMap.values());
+  const orderedStops: TransportRouteStop[] = [];
+  let currentPoint = startPoint;
+  let cumulativeDistanceKm = 0;
+
+  while (remainingStops.length) {
+    let nearestIndex = 0;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+
+    remainingStops.forEach((candidate, index) => {
+      const distance = haversineDistanceKm(currentPoint, candidate.point);
+
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = index;
+      }
+    });
+
+    const [nextStop] = remainingStops.splice(nearestIndex, 1);
+    const segmentDistance = Math.max(0, Number(nearestDistance.toFixed(1)));
+    cumulativeDistanceKm += segmentDistance;
+
+    orderedStops.push({
+      pointId: nextStop.point.id,
+      label: nextStop.point.label,
+      pickupCount: nextStop.pickupCount,
+      riderNames: nextStop.riderNames,
+      distanceFromPreviousKm: segmentDistance,
+      cumulativeDistanceKm: Number(cumulativeDistanceKm.toFixed(1)),
+    });
+
+    currentPoint = nextStop.point;
+  }
+
+  const finalLegDistanceKm = Number(
+    haversineDistanceKm(currentPoint, destinationPoint).toFixed(1),
+  );
+  const totalDistanceKm = Number((cumulativeDistanceKm + finalLegDistanceKm).toFixed(1));
+  const pickupCount = group.enrollments.reduce(
+    (total, enrollment) => total + enrollment.seatCount,
+    0,
+  );
+  const totalFare = Number(
+    (6 + totalDistanceKm * 3.2 + orderedStops.length * 1.4).toFixed(2),
+  );
+  const splitFare = Number(
+    (totalFare / Math.max(1, pickupCount)).toFixed(2),
+  );
+  const durationMinutes = Math.max(
+    10,
+    Math.round(totalDistanceKm * 4.6 + orderedStops.length * 3),
+  );
+
+  return {
+    startLabel: startPoint.label,
+    endLabel: destinationPoint.label,
+    pickupCount,
+    stopCount: orderedStops.length,
+    totalDistanceKm,
+    totalFare,
+    splitFare,
+    durationMinutes,
+    finalLegDistanceKm,
+    stops: orderedStops,
   };
 }
 

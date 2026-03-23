@@ -20,7 +20,7 @@ import {
   isHousingCategory,
   type HousingGenderPreference,
 } from "@/lib/housing";
-import type { Listing } from "@/lib/mock-data";
+import type { Listing } from "@/lib/listings";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import {
   itemConditionLabels,

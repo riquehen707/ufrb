@@ -4,8 +4,8 @@ import { MessageSquareText, ShieldCheck, Store } from "lucide-react";
 import styles from "@/components/profile/profile-shell.module.scss";
 import { MarketplaceListingCard } from "@/components/marketplace/marketplace-listing-card";
 import { getListingMoneyHeadline } from "@/lib/listing-detail";
+import type { Listing } from "@/lib/listings";
 import { getListingLocationPrimary } from "@/lib/location";
-import type { Listing } from "@/lib/mock-data";
 import type { PublicProfile } from "@/lib/profiles";
 
 type Props = {

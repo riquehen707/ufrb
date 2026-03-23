@@ -281,6 +281,10 @@
     padding: 0.76rem;
   }
 
+  .summaryGrid {
+    grid-auto-columns: minmax(9.4rem, 76vw);
+  }
+
   .workspaceFrame {
     padding: 0.82rem;
     border-radius: 0.95rem;

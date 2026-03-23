@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BusFront, Clock3, Coins, MapPin, Navigation, Route, UsersRound } from "lucide-react";
 
+import { readPermissionState, type AppPermissionState } from "@/lib/permissions";
 import {
-  estimateTransport,
+  buildTransportRoutePlan,
+  getRoutePointById,
+  getTransportGroupById,
   routePoints,
   transportGroups,
 } from "@/lib/work-hub";
@@ -22,12 +25,24 @@ type DeviceLocation = {
 };
 
 export function TransportWorkspace() {
+  const initialGroup = transportGroups[0];
   const [role, setRole] = useState<"driver" | "rider">("rider");
-  const [originId, setOriginId] = useState(routePoints[1]?.id ?? routePoints[0].id);
-  const [destinationId, setDestinationId] = useState(routePoints[0].id);
-  const [departureTime, setDepartureTime] = useState("07:10");
-  const [ridersCount, setRidersCount] = useState(4);
+  const [activeGroupId, setActiveGroupId] = useState(initialGroup?.id ?? "");
+  const [originId, setOriginId] = useState(
+    initialGroup?.originPointId ?? routePoints[1]?.id ?? routePoints[0].id,
+  );
+  const [destinationId, setDestinationId] = useState(
+    initialGroup?.destinationPointId ?? routePoints[0].id,
+  );
+  const [departureTime, setDepartureTime] = useState(
+    initialGroup?.departureTime ?? "07:10",
+  );
+  const [ridersCount, setRidersCount] = useState(
+    Math.max(1, initialGroup?.seatsFilled ?? 4),
+  );
   const [deviceLocation, setDeviceLocation] = useState<DeviceLocation | null>(null);
+  const [locationPermission, setLocationPermission] =
+    useState<AppPermissionState>("unsupported");
   const [locationMessage, setLocationMessage] = useState<{
     tone: "info" | "success" | "error";
     text: string;
@@ -35,12 +50,42 @@ export function TransportWorkspace() {
   const [isLocating, setIsLocating] = useState(false);
 
   const selectedOrigin = routePoints.find((point) => point.id === originId) ?? routePoints[0];
-  const selectedDestination =
-    routePoints.find((point) => point.id === destinationId) ?? routePoints[0];
-  const resolvedOrigin = deviceLocation ?? selectedOrigin;
-  const estimate = estimateTransport(resolvedOrigin, selectedDestination, ridersCount);
+  const activeGroup = getTransportGroupById(activeGroupId);
+  const routePlan = useMemo(
+    () =>
+      buildTransportRoutePlan(activeGroup, {
+        customStart: deviceLocation ?? selectedOrigin,
+        customDestinationId: destinationId,
+      }),
+    [activeGroup, destinationId, deviceLocation, selectedOrigin],
+  );
 
-  function requestCurrentLocation() {
+  useEffect(() => {
+    let isMounted = true;
+
+    void readPermissionState("geolocation").then((state) => {
+      if (isMounted) {
+        setLocationPermission(state);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  async function requestCurrentLocation() {
+    const currentPermission = await readPermissionState("geolocation");
+    setLocationPermission(currentPermission);
+
+    if (currentPermission === "denied") {
+      setLocationMessage({
+        tone: "error",
+        text: "Libera a localizacao do navegador para usar tua rota atual.",
+      });
+      return;
+    }
+
     if (!navigator.geolocation) {
       setLocationMessage({
         tone: "error",
@@ -63,6 +108,7 @@ export function TransportWorkspace() {
           label: "Tua localizacao atual",
         });
         setIsLocating(false);
+        setLocationPermission("granted");
         setLocationMessage({
           tone: "success",
           text: "Localizacao adicionada ao trajeto.",
@@ -70,6 +116,7 @@ export function TransportWorkspace() {
       },
       () => {
         setIsLocating(false);
+        void readPermissionState("geolocation").then(setLocationPermission);
         setLocationMessage({
           tone: "error",
           text: "Nao rolou usar tua localizacao agora. Escolhe um ponto manualmente.",
@@ -91,23 +138,32 @@ export function TransportWorkspace() {
     });
   }
 
+  function activateGroup(groupId: string) {
+    const matchingGroup = getTransportGroupById(groupId);
+    setActiveGroupId(groupId);
+    setDepartureTime(matchingGroup.departureTime);
+    setOriginId(matchingGroup.originPointId);
+    setDestinationId(matchingGroup.destinationPointId);
+    setRidersCount(Math.max(1, matchingGroup.seatsFilled));
+  }
+
   return (
     <div className="work-stack">
       <section className="work-highlight-grid">
         <article className="work-metric-card">
           <BusFront size={18} />
-          <strong>{transportGroups.length}</strong>
-          <span>grupos</span>
+          <strong>{activeGroup.driverLabel}</strong>
+          <span>motorista</span>
         </article>
         <article className="work-metric-card">
           <Clock3 size={18} />
-          <strong>{departureTime}</strong>
-          <span>horario</span>
+          <strong>{routePlan.durationMinutes} min</strong>
+          <span>rota estimada</span>
         </article>
         <article className="work-metric-card">
           <UsersRound size={18} />
-          <strong>{ridersCount}</strong>
-          <span>no rateio</span>
+          <strong>{routePlan.pickupCount}</strong>
+          <span>inscritos</span>
         </article>
       </section>
 
@@ -141,6 +197,22 @@ export function TransportWorkspace() {
           </div>
 
           <div className="field-grid">
+            <div className="field">
+              <label htmlFor="transport-group">Horario com grupo</label>
+              <select
+                id="transport-group"
+                className="select-field"
+                value={activeGroupId}
+                onChange={(event) => activateGroup(event.target.value)}
+              >
+                {transportGroups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.departureTime} · {group.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="field">
               <label htmlFor="transport-origin">Ponto de partida</label>
               <select
@@ -209,7 +281,7 @@ export function TransportWorkspace() {
             <button
               type="button"
               className="ghost-button"
-              onClick={requestCurrentLocation}
+              onClick={() => void requestCurrentLocation()}
               disabled={isLocating}
             >
               <Navigation size={16} />
@@ -224,6 +296,17 @@ export function TransportWorkspace() {
             ) : null}
           </div>
 
+          <div className="permission-chip-row" aria-label="Permissao de localizacao">
+            <span className="active-filter-pill">
+              Localizacao{" "}
+              {locationPermission === "granted"
+                ? "liberada"
+                : locationPermission === "denied"
+                  ? "bloqueada"
+                  : "sob demanda"}
+            </span>
+          </div>
+
           {locationMessage ? (
             <div className="status-banner" data-tone={locationMessage.tone}>
               {locationMessage.text}
@@ -234,32 +317,67 @@ export function TransportWorkspace() {
         <article className="work-card work-estimate-card">
           <span className="account-chip">
             <Route size={16} />
-            Estimativa inicial
+            Rota automatica
           </span>
 
           <h3>
-            {resolvedOrigin.label} para {selectedDestination.label}
+            {routePlan.startLabel} ate {routePlan.endLabel}
           </h3>
 
           <div className="work-estimate-grid">
             <article className="mini-stat-card">
               <span>Distancia</span>
-              <strong>{estimate.distanceKm.toFixed(1)} km</strong>
+              <strong>{routePlan.totalDistanceKm.toFixed(1)} km</strong>
             </article>
             <article className="mini-stat-card">
               <span>Tempo</span>
-              <strong>{estimate.durationMinutes} min</strong>
+              <strong>{routePlan.durationMinutes} min</strong>
             </article>
             <article className="mini-stat-card">
               <span>Total da corrida</span>
-              <strong>{moneyFormatter.format(estimate.totalFare)}</strong>
+              <strong>{moneyFormatter.format(routePlan.totalFare)}</strong>
             </article>
             <article className="mini-stat-card">
               <span>Rateio por pessoa</span>
-              <strong>{moneyFormatter.format(estimate.splitFare)}</strong>
+              <strong>{moneyFormatter.format(routePlan.splitFare)}</strong>
             </article>
           </div>
 
+          <div className="work-inline-note">
+            {role === "driver"
+              ? `Se tu fizer essa rota agora, a corrida fecha em ${moneyFormatter.format(routePlan.totalFare)}.`
+              : `Entrando nesse horario, tua parte fica em ${moneyFormatter.format(routePlan.splitFare)}.`}
+          </div>
+
+          <div className="transport-route-list" aria-label="Ordem sugerida de paradas">
+            {routePlan.stops.map((stop, index) => (
+              <article key={stop.pointId} className="transport-route-stop">
+                <span className="transport-route-index">{index + 1}</span>
+                <div className="transport-route-copy">
+                  <strong>{stop.label}</strong>
+                  <span>
+                    {stop.pickupCount} pessoa(s) · {stop.riderNames.join(", ")}
+                  </span>
+                </div>
+                <span className="transport-route-meta">
+                  +{stop.distanceFromPreviousKm.toFixed(1)} km
+                </span>
+              </article>
+            ))}
+
+            <article className="transport-route-stop transport-route-stop-arrival">
+              <span className="transport-route-index">
+                {routePlan.stops.length + 1}
+              </span>
+              <div className="transport-route-copy">
+                <strong>{getRoutePointById(activeGroup.destinationPointId).label}</strong>
+                <span>Chegada final do grupo.</span>
+              </div>
+              <span className="transport-route-meta">
+                +{routePlan.finalLegDistanceKm.toFixed(1)} km
+              </span>
+            </article>
+          </div>
         </article>
       </section>
 
@@ -273,7 +391,10 @@ export function TransportWorkspace() {
 
         <div className="work-board-grid">
           {transportGroups.map((group) => (
-            <article key={group.id} className="work-demand-card">
+            <article
+              key={group.id}
+              className={`work-demand-card ${activeGroupId === group.id ? "work-demand-card-active" : ""}`}
+            >
               <div className="work-demand-topline">
                 <span className="status-pill" data-tone="info">
                   {group.departureTime}
@@ -289,17 +410,26 @@ export function TransportWorkspace() {
               <div className="work-demand-meta">
                 <span>
                   <Route size={14} />
-                  {group.distanceKm.toFixed(1)} km
+                  {buildTransportRoutePlan(group).totalDistanceKm.toFixed(1)} km
                 </span>
                 <span>
                   <Coins size={14} />
-                  {moneyFormatter.format(group.splitFare)} por pessoa
+                  {moneyFormatter.format(buildTransportRoutePlan(group).splitFare)} por pessoa
                 </span>
               </div>
 
-              <button type="button" className="secondary-button">
-                Entrar nesse horario
-              </button>
+              <div className="work-action-row">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => activateGroup(group.id)}
+                >
+                  Planejar rota
+                </button>
+                <button type="button" className="ghost-button">
+                  Entrar nesse horario
+                </button>
+              </div>
             </article>
           ))}
         </div>

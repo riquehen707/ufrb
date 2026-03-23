@@ -213,6 +213,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
+  min-width: 0;
 }
 
 .priceCopy {
@@ -324,12 +325,14 @@
   align-items: center;
   gap: 0.38rem;
   min-height: 2rem;
+  max-width: 100%;
   padding: 0.4rem 0.65rem;
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface) 80%, transparent);
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .sellerRow {
@@ -443,6 +446,11 @@
 
   .priceCopy strong {
     font-size: 1.28rem;
+  }
+
+  .ratingChip {
+    width: 100%;
+    justify-content: center;
   }
 
   .attributeGrid {

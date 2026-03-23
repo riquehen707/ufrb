@@ -2,17 +2,21 @@ import Link from "next/link";
 import { Compass, PenSquare, ShieldCheck, Store, UserRound } from "lucide-react";
 
 import { AuthPanel } from "@/components/auth/auth-panel";
+import { ProfileActivityPanel } from "@/components/profile/profile-activity-panel";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import styles from "@/components/profile/profile-shell.module.scss";
 import { MarketplaceListingCard } from "@/components/marketplace/marketplace-listing-card";
 import { getListingMoneyHeadline } from "@/lib/listing-detail";
+import { summarizeListingPerformance } from "@/lib/marketplace-manager";
+import type { ProfileActivitySnapshot } from "@/lib/profile-activity";
+import type { Listing } from "@/lib/listings";
 import { getListingLocationPrimary } from "@/lib/location";
-import type { Listing } from "@/lib/mock-data";
 import type { PublicProfile } from "@/lib/profiles";
 
 type Props = {
   profile: PublicProfile | null;
   listings: Listing[];
+  activity: ProfileActivitySnapshot;
   savedNotice?: boolean;
 };
 
@@ -36,7 +40,12 @@ function getInstagramHref(handle: string) {
   return `https://instagram.com/${handle.replace(/^@/, "")}`;
 }
 
-export function ProfileHub({ profile, listings, savedNotice = false }: Props) {
+export function ProfileHub({
+  profile,
+  listings,
+  activity,
+  savedNotice = false,
+}: Props) {
   if (!profile) {
     return (
       <section className={styles.shell}>
@@ -53,6 +62,7 @@ export function ProfileHub({ profile, listings, savedNotice = false }: Props) {
   const activeLocations = Array.from(
     new Set(listings.map((listing) => getListingLocationPrimary(listing))),
   ).slice(0, 4);
+  const listingSnapshot = summarizeListingPerformance(listings);
 
   return (
     <section className={styles.shell}>
@@ -120,6 +130,40 @@ export function ProfileHub({ profile, listings, savedNotice = false }: Props) {
         </article>
       </section>
 
+      <section className={styles.listingGrid}>
+        <div className={styles.sectionTitle}>
+          <strong>Painel rapido</strong>
+          <span>Leitura direta do que esta no ar e do potencial atual.</span>
+        </div>
+
+        <div className={styles.previewGrid}>
+          <article className={styles.statCard}>
+            <span>Potencial ativo</span>
+            <strong>{moneyFormatter.format(listingSnapshot.potentialGross)}</strong>
+          </article>
+          <article className={styles.statCard}>
+            <span>Produtos no ar</span>
+            <strong>{moneyFormatter.format(listingSnapshot.productPotential)}</strong>
+          </article>
+          <article className={styles.statCard}>
+            <span>Servicos no ar</span>
+            <strong>{moneyFormatter.format(listingSnapshot.servicePotential)}</strong>
+          </article>
+          <article className={styles.statCard}>
+            <span>Demandas abertas</span>
+            <strong>{listingSnapshot.activeRequests}</strong>
+          </article>
+          <article className={styles.statCard}>
+            <span>Ticket medio</span>
+            <strong>{moneyFormatter.format(listingSnapshot.averageOfferTicket)}</strong>
+          </article>
+          <article className={styles.statCard}>
+            <span>Categorias</span>
+            <strong>{listingSnapshot.activeCategories}</strong>
+          </article>
+        </div>
+      </section>
+
       <section className={styles.infoGrid}>
         <article className={styles.card}>
           <div className={styles.sectionTitle}>
@@ -180,6 +224,8 @@ export function ProfileHub({ profile, listings, savedNotice = false }: Props) {
           </Link>
         </article>
       </section>
+
+      <ProfileActivityPanel activity={activity} />
 
       {listings.length ? (
         <section className={styles.listingGrid}>

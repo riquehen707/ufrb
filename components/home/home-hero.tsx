@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ArrowRight, Download, GraduationCap, MapPin } from "lucide-react";
+import { ArrowRight, GraduationCap, MapPin } from "lucide-react";
 
-import type { Listing } from "@/lib/mock-data";
+import { InstallAppButton } from "@/components/engagement/install-app-button";
+import type { Listing } from "@/lib/listings";
 
 type Props = {
   listings: Listing[];
@@ -26,6 +27,7 @@ function formatPrice(listing: Listing) {
 export function HomeHero({ listings }: Props) {
   const featuredListings = listings.filter((listing) => listing.featured).slice(0, 3);
   const collageListings = featuredListings.length >= 3 ? featuredListings : listings.slice(0, 3);
+  const hasListings = collageListings.length > 0;
 
   return (
     <section className="section home-hero-section">
@@ -46,10 +48,7 @@ export function HomeHero({ listings }: Props) {
             </p>
 
             <div className="home-hero-actions">
-              <Link href="#baixar-app" className="home-hero-button secondary">
-                <Download size={18} />
-                Baixar o app
-              </Link>
+              <InstallAppButton className="home-hero-button secondary" />
               <Link href="/feed" className="home-hero-button primary">
                 Explorar o feed
                 <ArrowRight size={18} />
@@ -58,26 +57,64 @@ export function HomeHero({ listings }: Props) {
           </div>
 
           <aside className="home-hero-collage" aria-label="Previa do que circula no app">
-            {collageListings.map((listing, index) => (
-              <article
-                key={listing.id}
-                className={`home-collage-card ${index === 0 ? "lead" : "stacked"}`}
-                data-tone={collageTones[index] ?? "neutral"}
-              >
-                <div className="home-collage-surface" />
-                <div className="home-collage-copy">
-                  <div className="home-collage-top">
-                    <span className="home-collage-badge">{listing.category}</span>
-                    <span className="home-collage-meta">
-                      <MapPin size={13} />
-                      {listing.campus}
-                    </span>
+            {hasListings ? (
+              collageListings.map((listing, index) => (
+                <article
+                  key={listing.id}
+                  className={`home-collage-card ${index === 0 ? "lead" : "stacked"}`}
+                  data-tone={collageTones[index] ?? "neutral"}
+                >
+                  <div className="home-collage-surface" />
+                  <div className="home-collage-copy">
+                    <div className="home-collage-top">
+                      <span className="home-collage-badge">{listing.category}</span>
+                      <span className="home-collage-meta">
+                        <MapPin size={13} />
+                        {listing.campus}
+                      </span>
+                    </div>
+                    <strong>{listing.title}</strong>
+                    <p>{formatPrice(listing)}</p>
                   </div>
-                  <strong>{listing.title}</strong>
-                  <p>{formatPrice(listing)}</p>
-                </div>
-              </article>
-            ))}
+                </article>
+              ))
+            ) : (
+              <>
+                <article className="home-collage-card lead" data-tone="primary">
+                  <div className="home-collage-surface" />
+                  <div className="home-collage-copy">
+                    <div className="home-collage-top">
+                      <span className="home-collage-badge">Feed real</span>
+                      <span className="home-collage-meta">Sem anuncio ficticio</span>
+                    </div>
+                    <strong>Os primeiros anuncios entram aqui.</strong>
+                    <p>Quando alguem publicar no CAMPUS, o feed comeca a circular.</p>
+                  </div>
+                </article>
+                <article className="home-collage-card stacked" data-tone="accent">
+                  <div className="home-collage-surface" />
+                  <div className="home-collage-copy">
+                    <div className="home-collage-top">
+                      <span className="home-collage-badge">Produtos</span>
+                      <span className="home-collage-meta">Tempo real</span>
+                    </div>
+                    <strong>Nada inventado.</strong>
+                    <p>So aparece o que foi publicado de verdade.</p>
+                  </div>
+                </article>
+                <article className="home-collage-card stacked" data-tone="neutral">
+                  <div className="home-collage-surface" />
+                  <div className="home-collage-copy">
+                    <div className="home-collage-top">
+                      <span className="home-collage-badge">Servicos e moradia</span>
+                      <span className="home-collage-meta">Campus</span>
+                    </div>
+                    <strong>O app abre vazio e cresce com a comunidade.</strong>
+                    <p>Explora o feed ou publica o primeiro anuncio.</p>
+                  </div>
+                </article>
+              </>
+            )}
           </aside>
         </div>
       </div>

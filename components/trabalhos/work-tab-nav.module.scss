@@ -111,3 +111,14 @@
     }
   }
 }
+
+@media (max-width: 420px) {
+  .strip {
+    grid-auto-columns: minmax(11.8rem, 80vw);
+  }
+
+  .tab {
+    gap: 0.62rem;
+    padding: 0.72rem;
+  }
+}

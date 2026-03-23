@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Sora } from "next/font/google";
 
+import { InstallProvider } from "@/components/engagement/install-provider";
 import { getSiteUrl } from "@/lib/site-url";
 
 import "./globals.css";
@@ -88,7 +89,9 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${bodyFont.variable} ${displayFont.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        <InstallProvider>{children}</InstallProvider>
+      </body>
     </html>
   );
 }

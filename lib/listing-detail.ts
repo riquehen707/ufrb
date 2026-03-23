@@ -1,4 +1,4 @@
-import type { Listing } from "@/lib/mock-data";
+import type { Listing } from "@/lib/listings";
 import {
   formatHousingAvailableFrom,
   getHousingGenderLabel,

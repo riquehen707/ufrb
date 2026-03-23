@@ -7,6 +7,7 @@ import { LogIn, LogOut, ShieldCheck, UserRoundPlus } from "lucide-react";
 
 import styles from "@/components/auth/auth-panel.module.scss";
 import { campusOptions, defaultCampus } from "@/lib/campuses";
+import { getAuthCallbackUrl } from "@/lib/site-url";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
@@ -157,12 +158,11 @@ export function AuthPanel({
           return;
         }
 
-        const callbackNext = encodeURIComponent(redirectTo);
         const { data, error } = await supabase.auth.signUp({
           email: formState.email,
           password: formState.password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback?next=${callbackNext}`,
+            emailRedirectTo: getAuthCallbackUrl(redirectTo),
             data: {
               full_name: formState.fullName,
               university: "UFRB",

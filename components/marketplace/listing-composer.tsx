@@ -42,6 +42,7 @@ import {
   type HousingListingKind,
   type HousingObligation,
 } from "@/lib/housing";
+import { readPermissionState, type AppPermissionState } from "@/lib/permissions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { isSupabaseConfigured, listingMediaBucket } from "@/lib/supabase/env";
 
@@ -304,6 +305,10 @@ export function ListingComposer({
   const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([]);
   const [selectedImagePreviews, setSelectedImagePreviews] = useState<string[]>([]);
   const [isLocating, setIsLocating] = useState(false);
+  const [cameraPermission, setCameraPermission] =
+    useState<AppPermissionState>("unsupported");
+  const [locationPermission, setLocationPermission] =
+    useState<AppPermissionState>("unsupported");
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -342,6 +347,26 @@ export function ListingComposer({
       });
     };
   }, [selectedImagePreviews]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void Promise.all([
+      readPermissionState("camera"),
+      readPermissionState("geolocation"),
+    ]).then(([cameraState, geolocationState]) => {
+      if (!isMounted) {
+        return;
+      }
+
+      setCameraPermission(cameraState);
+      setLocationPermission(geolocationState);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const categories = getCategoriesForType(draft.type);
   const focusOptions = getFocusOptions(draft.category);
@@ -447,7 +472,62 @@ export function ListingComposer({
     }
   }
 
-  function requestCurrentLocation() {
+  async function requestCameraCapture() {
+    setMessage(null);
+
+    const currentPermission = await readPermissionState("camera");
+    setCameraPermission(currentPermission);
+
+    if (currentPermission === "denied") {
+      setMessage({
+        tone: "error",
+        text: "Libera a camera no navegador para tirar foto por aqui.",
+      });
+      return;
+    }
+
+    if (
+      "mediaDevices" in navigator &&
+      typeof navigator.mediaDevices?.getUserMedia === "function"
+    ) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "environment",
+          },
+        });
+
+        stream.getTracks().forEach((track) => track.stop());
+        setCameraPermission("granted");
+      } catch {
+        const nextPermission = await readPermissionState("camera");
+        setCameraPermission(nextPermission);
+
+        if (nextPermission === "denied") {
+          setMessage({
+            tone: "error",
+            text: "Nao deu para abrir a camera. Confere a permissao do navegador.",
+          });
+          return;
+        }
+      }
+    }
+
+    cameraInputRef.current?.click();
+  }
+
+  async function requestCurrentLocation() {
+    const currentPermission = await readPermissionState("geolocation");
+    setLocationPermission(currentPermission);
+
+    if (currentPermission === "denied") {
+      setMessage({
+        tone: "error",
+        text: "Libera a localizacao no navegador para usar teu ponto atual.",
+      });
+      return;
+    }
+
     if (!navigator.geolocation) {
       setMessage({
         tone: "error",
@@ -469,6 +549,7 @@ export function ListingComposer({
             current.locationNote || "Localizacao compartilhada pelo aparelho",
         }));
         setIsLocating(false);
+        setLocationPermission("granted");
         setMessage({
           tone: "success",
           text: "Localizacao adicionada ao anuncio.",
@@ -476,6 +557,7 @@ export function ListingComposer({
       },
       () => {
         setIsLocating(false);
+        void readPermissionState("geolocation").then(setLocationPermission);
         setMessage({
           tone: "error",
           text: "Nao foi possivel usar tua localizacao agora.",
@@ -1184,7 +1266,7 @@ export function ListingComposer({
                 <button
                   type="button"
                   className="ghost-button"
-                  onClick={() => cameraInputRef.current?.click()}
+                  onClick={() => void requestCameraCapture()}
                 >
                   <Camera size={16} />
                   Tirar foto
@@ -1226,7 +1308,7 @@ export function ListingComposer({
                 <button
                   type="button"
                   className="ghost-button"
-                  onClick={requestCurrentLocation}
+                  onClick={() => void requestCurrentLocation()}
                   disabled={isLocating}
                 >
                   <MapPin size={16} />
@@ -1240,6 +1322,25 @@ export function ListingComposer({
                     {selectedImagePreviews.length} imagem(ns)
                   </span>
                 ) : null}
+              </div>
+
+              <div className="permission-chip-row" aria-label="Permissoes do aparelho">
+                <span className="active-filter-pill">
+                  Camera{" "}
+                  {cameraPermission === "granted"
+                    ? "liberada"
+                    : cameraPermission === "denied"
+                      ? "bloqueada"
+                      : "sob demanda"}
+                </span>
+                <span className="active-filter-pill">
+                  Localizacao{" "}
+                  {locationPermission === "granted"
+                    ? "liberada"
+                    : locationPermission === "denied"
+                      ? "bloqueada"
+                      : "sob demanda"}
+                </span>
               </div>
             </div>
           </details>
