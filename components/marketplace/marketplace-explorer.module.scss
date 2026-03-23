@@ -1,0 +1,512 @@
+@use "../../styles/design-system" as *;
+
+.explorer {
+  @include panel-shell($padding: 1rem, $radius: 1.1rem);
+  gap: 0.95rem;
+  border-color: color-mix(in srgb, var(--accent) 10%, var(--line));
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 9%, transparent), transparent 16rem),
+    radial-gradient(circle at bottom left, color-mix(in srgb, var(--primary) 9%, transparent), transparent 18rem),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-strong) 98%, transparent),
+      color-mix(in srgb, var(--surface) 95%, transparent)
+    );
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--accent) 28%, transparent),
+      transparent 42%
+    );
+    opacity: 0.9;
+    pointer-events: none;
+  }
+
+  &[data-workspace="seller"] {
+    background:
+      radial-gradient(circle at top right, color-mix(in srgb, var(--primary) 12%, transparent), transparent 16rem),
+      radial-gradient(circle at bottom left, color-mix(in srgb, var(--accent) 8%, transparent), transparent 18rem),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--surface-strong) 98%, transparent),
+        color-mix(in srgb, var(--surface) 95%, transparent)
+      );
+  }
+
+  :global(.type-switch) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.22rem;
+    border: 1px solid color-mix(in srgb, var(--text) 4%, var(--line));
+    border-radius: 0.9rem;
+    background: color-mix(in srgb, var(--surface-strong) 86%, transparent);
+  }
+
+  :global(.type-pill) {
+    min-height: 2.85rem;
+    border-radius: 0.74rem;
+  }
+
+  :global(.type-pill.active) {
+    box-shadow: none;
+  }
+
+  :global(.secondary-button) {
+    border-radius: 0.82rem;
+  }
+
+  :global(.empty-state) {
+    border: 1px solid color-mix(in srgb, var(--text) 5%, var(--line));
+    border-radius: 1rem;
+    background:
+      radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 8%, transparent), transparent 12rem),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--surface-strong) 96%, transparent),
+        color-mix(in srgb, var(--surface) 92%, transparent)
+      );
+    box-shadow: none;
+  }
+}
+
+.topbar {
+  display: grid;
+  gap: 0.72rem;
+}
+
+.headerRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.heading {
+  display: grid;
+  gap: 0.26rem;
+  max-width: 35rem;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.8rem, 2vw, 2.3rem);
+  line-height: 0.96;
+  letter-spacing: -0.06em;
+}
+
+.lead {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.7rem;
+}
+
+.createAction {
+  min-height: 2.9rem;
+}
+
+.noticeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.noticePill {
+  @include subtle-pill($min-height: 2rem, $padding-y: 0.35rem, $padding-x: 0.7rem);
+  border: 1px solid color-mix(in srgb, var(--success) 18%, var(--line));
+  background: color-mix(in srgb, var(--success) 10%, var(--surface-elevated));
+  color: color-mix(in srgb, var(--success) 78%, var(--text));
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.commandArea {
+  display: grid;
+}
+
+.commandGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(168px, 184px) minmax(156px, 178px);
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.searchCard {
+  @include input-shell($height: 3.7rem, $radius: 0.98rem, $padding-x: 0.95rem);
+  border-color: color-mix(in srgb, var(--accent) 8%, var(--line));
+  background: color-mix(in srgb, var(--surface-elevated) 76%, transparent);
+  box-shadow: none;
+
+  svg {
+    color: var(--muted);
+  }
+
+  &:focus-within {
+    border-color: color-mix(in srgb, var(--accent) 18%, var(--line));
+    box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+}
+
+.searchInput {
+  min-height: 3rem;
+}
+
+.sortCard,
+.filterPanel {
+  border: 1px solid color-mix(in srgb, var(--accent) 8%, var(--line));
+  border-radius: 0.98rem;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-elevated) 82%, transparent),
+      color-mix(in srgb, var(--surface) 92%, transparent)
+    );
+  box-shadow: none;
+}
+
+.sortCard {
+  @include panel-card($padding: 0.74rem 0.82rem 0.8rem, $radius: 0.98rem);
+  gap: 0.45rem;
+
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+}
+
+.filterPanel {
+  @include panel-card($padding: 0, $radius: 0.98rem);
+  gap: 0;
+  overflow: hidden;
+
+  &[open] {
+    grid-column: 1 / -1;
+    border-color: color-mix(in srgb, var(--accent) 18%, var(--line));
+    box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+}
+
+.filterSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 3.7rem;
+  padding: 0.92rem;
+  cursor: pointer;
+  list-style: none;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+}
+
+.filterTitle,
+.filterMeta {
+  display: inline-flex;
+  align-items: center;
+}
+
+.filterTitle {
+  gap: 0.42rem;
+  font-weight: 700;
+}
+
+.filterMeta {
+  min-height: 2rem;
+  padding: 0.3rem 0.62rem;
+  border: 1px solid color-mix(in srgb, var(--text) 6%, var(--line));
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.filterBody {
+  display: grid;
+  gap: 0.9rem;
+  padding: 0 0.92rem 0.92rem;
+  border-top: 1px solid color-mix(in srgb, var(--text) 4%, var(--line));
+}
+
+.filterIntro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.filterCopy {
+  display: grid;
+  gap: 0.14rem;
+
+  strong {
+    font-size: 0.95rem;
+    letter-spacing: -0.02em;
+  }
+
+  span {
+    color: var(--muted);
+    font-size: 0.83rem;
+    line-height: 1.45;
+  }
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+
+  :global(.field) {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  :global(.field label) {
+    color: var(--muted);
+  }
+}
+
+.categoryRow {
+  display: flex;
+  gap: 0.55rem;
+  overflow-x: auto;
+  padding-bottom: 0.08rem;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.categoryCard {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.7rem;
+  padding: 0.68rem 0.92rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 8%, var(--line));
+  border-radius: 0.84rem;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-elevated) 82%, transparent),
+      color-mix(in srgb, var(--surface) 92%, transparent)
+    );
+  color: var(--text-soft);
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+  @include pressable(
+    $hover-translate: -1px,
+    $hover-border: color-mix(in srgb, var(--accent) 18%, var(--line))
+  );
+}
+
+.categoryCardActive {
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--line));
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent) 16%, transparent),
+      color-mix(in srgb, var(--primary) 12%, transparent)
+    );
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.resultRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 3rem;
+  padding: 0.76rem 0.86rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 8%, var(--line));
+  border-radius: 0.94rem;
+  background: color-mix(in srgb, var(--surface-elevated) 66%, transparent);
+}
+
+.resultCopy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+
+  span {
+    font-weight: 700;
+  }
+}
+
+.resultFilters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.filterPill {
+  @include subtle-pill($min-height: 2rem, $padding-y: 0.34rem, $padding-x: 0.68rem);
+  border: 1px solid color-mix(in srgb, var(--accent) 13%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-elevated));
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.clearButton {
+  @include subtle-pill($min-height: 2rem, $padding-y: 0.34rem, $padding-x: 0.68rem);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  @include pressable(
+    $hover-translate: 0,
+    $hover-border: transparent,
+    $hover-background: color-mix(in srgb, var(--surface-elevated) 80%, transparent)
+  );
+
+  &:hover,
+  &:focus-visible {
+    color: var(--text);
+  }
+}
+
+.resultsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 0.9rem;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .commandGrid {
+    grid-template-columns: minmax(0, 1fr) minmax(168px, 184px);
+  }
+
+  .filterPanel {
+    grid-column: 1 / -1;
+  }
+
+  .filterGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .explorer {
+    gap: 0.9rem;
+    padding: 0.9rem;
+
+    :global(.type-switch) {
+      width: 100%;
+      justify-content: stretch;
+    }
+
+    :global(.type-pill) {
+      flex: 1 1 0;
+      justify-content: center;
+    }
+  }
+
+  .headerActions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .createAction {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .commandGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .resultsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .explorer {
+    gap: 0.82rem;
+    padding: 0.82rem;
+    border-radius: 0.98rem;
+  }
+
+  .title {
+    font-size: 1.55rem;
+  }
+
+  .lead {
+    font-size: 0.9rem;
+  }
+
+  .noticePill {
+    min-height: 1.9rem;
+    padding: 0.32rem 0.66rem;
+  }
+
+  .searchCard {
+    min-height: 3.45rem;
+    padding: 0 0.84rem;
+  }
+
+  .searchInput {
+    min-height: 2.85rem;
+    font-size: 0.96rem;
+  }
+
+  .sortCard {
+    padding: 0.68rem 0.78rem 0.76rem;
+  }
+
+  .filterSummary {
+    min-height: 3.45rem;
+    padding: 0.84rem;
+  }
+
+  .filterBody {
+    padding: 0 0.84rem 0.84rem;
+  }
+
+  .filterGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .resultRow {
+    align-items: flex-start;
+  }
+
+  .resultFilters {
+    justify-content: flex-start;
+  }
+}

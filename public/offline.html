@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f766e" />
+    <title>CAMPUS | Offline</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4efe7;
+        --card: rgba(255, 255, 255, 0.92);
+        --text: #102221;
+        --muted: #58706c;
+        --primary: #0f766e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 1.5rem;
+        background:
+          radial-gradient(circle at top left, rgba(15, 118, 110, 0.12), transparent 24rem),
+          radial-gradient(circle at right center, rgba(255, 122, 89, 0.16), transparent 24rem),
+          linear-gradient(180deg, #fff8f1 0%, var(--bg) 50%, #eef5f2 100%);
+        color: var(--text);
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+
+      main {
+        width: min(100%, 34rem);
+        padding: 2rem;
+        border-radius: 2rem;
+        background: var(--card);
+        border: 1px solid rgba(16, 34, 33, 0.08);
+        box-shadow: 0 22px 60px rgba(24, 43, 42, 0.08);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 3.25rem;
+        height: 3.25rem;
+        border-radius: 1.15rem;
+        background: linear-gradient(135deg, var(--primary) 0%, #20b69b 100%);
+        color: #fff;
+        font-weight: 800;
+      }
+
+      h1 {
+        margin: 1rem 0 0.5rem;
+        font-size: clamp(2rem, 6vw, 3rem);
+        line-height: 0.95;
+      }
+
+      p {
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      a {
+        display: inline-flex;
+        margin-top: 1rem;
+        padding: 0.85rem 1.15rem;
+        border-radius: 999px;
+        background: var(--primary);
+        color: #fff;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="badge">C</div>
+      <h1>Voce esta offline.</h1>
+      <p>
+        O CAMPUS continua por aqui, mas para atualizar o feed e entrar na tua
+        conta a conexão precisa voltar. Quando o sinal melhorar, tenta de novo.
+      </p>
+      <a href="/">Tentar novamente</a>
+    </main>
+  </body>
+</html>

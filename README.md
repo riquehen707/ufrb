@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CAMPUS
 
-## Getting Started
+Marketplace PWA para estudantes universitários comprarem, venderem e oferecerem serviços com a cara da vida no campus.
 
-First, run the development server:
+## O que esta pronto
+
+- Home moderna e responsiva com UX mobile-first
+- Cadastro real com Supabase Auth
+- Sessao renovada via `proxy.ts` no Next 16
+- Fallback local para feed de anuncios quando o banco ainda nao estiver populado
+- Manifest, icones, service worker e tela offline
+- Callback `/auth/callback` para confirmacao por e-mail
+- `supabase/schema.sql` com `profiles`, `listings`, `donations`, trigger e RLS
+- Projeto preparado para deploy na Vercel
+
+## Rodando localmente
+
+1. Instale dependencias:
+
+```bash
+npm install
+```
+
+2. Copie `.env.example` para `.env.local` e preencha:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+SUPABASE_SERVICE_ROLE_KEY=
+DONATION_WEBHOOK_SECRET=
+```
+
+3. Execute o projeto:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Abra [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Setup do Supabase
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Crie um projeto no Supabase.
+2. Rode o SQL de `supabase/schema.sql` no SQL Editor.
+3. Em `Authentication > URL Configuration`, adicione:
+   - `http://localhost:3000/auth/callback`
+   - `https://SEU-DOMINIO/auth/callback`
+4. Copie a URL do projeto e a publishable/anon key para `.env.local` e para a Vercel.
+5. Para confirmacao de doacoes, configure tambem:
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `DONATION_WEBHOOK_SECRET`
 
-## Learn More
+Observacao: o feed tenta ler a tabela `listings`. Se ela estiver vazia, a interface exibe dados de demonstracao.
 
-To learn more about Next.js, take a look at the following resources:
+## Doacoes confirmadas
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `POST /api/donations` registra um apoio em `pending` e gera uma referencia.
+- `POST /api/donations/confirm` confirma ou cancela a doacao.
+- Quando a doacao entra como `confirmed`, o trigger atualiza `support_balance` e `support_count` no perfil do apoiador.
+- A rota de confirmacao espera o header `x-donation-webhook-secret`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploy na Vercel
 
-## Deploy on Vercel
+1. Importe o repositorio na Vercel.
+2. Configure as variaveis:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
+   - `NEXT_PUBLIC_SITE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `DONATION_WEBHOOK_SECRET`
+3. Faca o deploy.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Com HTTPS ativo, o navegador passa a habilitar instalacao PWA normalmente.

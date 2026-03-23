@@ -1,0 +1,119 @@
+@mixin pressable(
+  $hover-translate: -1px,
+  $active-scale: 0.985,
+  $hover-border: color-mix(in srgb, var(--accent) 18%, var(--line)),
+  $hover-background: null,
+  $hover-shadow: null
+) {
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    color 0.18s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: $hover-border;
+
+    @if $hover-background != null {
+      background: $hover-background;
+    }
+
+    @if $hover-shadow != null {
+      box-shadow: $hover-shadow;
+    }
+  }
+
+  &:active {
+    transform: scale($active-scale);
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY($hover-translate);
+    }
+  }
+}
+
+@mixin panel-shell(
+  $padding: 1rem,
+  $radius: 1.05rem,
+  $accent: var(--accent),
+  $shadow: var(--shadow-soft)
+) {
+  position: relative;
+  display: grid;
+  gap: 1rem;
+  padding: $padding;
+  border: 1px solid color-mix(in srgb, $accent 10%, var(--line));
+  border-radius: $radius;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, $accent 9%, transparent), transparent 16rem),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-strong) 98%, transparent),
+      color-mix(in srgb, var(--surface) 94%, transparent)
+    );
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--text) 4%, transparent) inset,
+    $shadow;
+  isolation: isolate;
+}
+
+@mixin panel-card(
+  $padding: 0.92rem,
+  $radius: 0.96rem,
+  $accent: var(--accent),
+  $background-strength: 96,
+  $surface-strength: 92
+) {
+  display: grid;
+  gap: 0.75rem;
+  padding: $padding;
+  border: 1px solid color-mix(in srgb, $accent 8%, var(--line));
+  border-radius: $radius;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-strong) #{$background-strength}%, transparent),
+      color-mix(in srgb, var(--surface) #{$surface-strength}%, transparent)
+    );
+}
+
+@mixin subtle-pill(
+  $min-height: 2rem,
+  $radius: 999px,
+  $padding-y: 0.34rem,
+  $padding-x: 0.68rem
+) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  min-height: $min-height;
+  padding: $padding-y $padding-x;
+  border: 1px solid color-mix(in srgb, var(--text) 5%, var(--line));
+  border-radius: $radius;
+  background: color-mix(in srgb, var(--surface-strong) 82%, transparent);
+  color: var(--muted);
+}
+
+@mixin input-shell(
+  $height: 3.6rem,
+  $radius: 0.92rem,
+  $padding-x: 0.92rem
+) {
+  display: flex;
+  align-items: center;
+  gap: 0.72rem;
+  min-height: $height;
+  padding: 0 $padding-x;
+  border: 1px solid color-mix(in srgb, var(--text) 5%, var(--line));
+  border-radius: $radius;
+  background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+
+  &:focus-within {
+    border-color: color-mix(in srgb, var(--accent) 18%, var(--line));
+    box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+}

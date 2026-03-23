@@ -1,0 +1,159 @@
+@use "../../styles/design-system" as *;
+
+.panel {
+  @include panel-shell($padding: 1rem, $radius: 1.05rem);
+  gap: 1rem;
+}
+
+.header {
+  display: grid;
+  gap: 0.34rem;
+  max-width: 34rem;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.8rem, 2vw, 2.4rem);
+  line-height: 0.94;
+  letter-spacing: -0.06em;
+}
+
+.lead {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.modeSwitch {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.42rem;
+  padding: 0.32rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 10%, var(--line));
+  border-radius: 0.95rem;
+  background: color-mix(in srgb, var(--surface-elevated) 72%, transparent);
+}
+
+.modeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.9rem;
+  padding: 0.62rem 0.88rem;
+  border: 1px solid transparent;
+  border-radius: 0.78rem;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  @include pressable(
+    $hover-translate: -1px,
+    $hover-border: color-mix(in srgb, var(--accent) 16%, transparent),
+    $hover-background: color-mix(in srgb, var(--surface-soft) 100%, transparent)
+  );
+}
+
+.modeButtonActive {
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-elevated));
+  color: var(--text);
+}
+
+.formGrid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.82rem;
+}
+
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.primaryAction,
+.secondaryAction,
+.signOutButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.9rem;
+  padding: 0.68rem 0.92rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--line));
+  border-radius: 0.84rem;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-elevated));
+  color: var(--text);
+  font-weight: 700;
+  @include pressable(
+    $hover-translate: -1px,
+    $hover-border: color-mix(in srgb, var(--accent) 22%, var(--line))
+  );
+}
+
+.secondaryAction,
+.signOutButton {
+  border-color: color-mix(in srgb, var(--text) 6%, var(--line));
+  background: color-mix(in srgb, var(--surface-elevated) 74%, transparent);
+}
+
+.sessionCard {
+  @include panel-card($padding: 0.95rem, $radius: 0.96rem);
+  gap: 0.8rem;
+}
+
+.sessionMeta {
+  display: grid;
+  gap: 0.32rem;
+
+  strong {
+    font-family: var(--font-display), sans-serif;
+    font-size: 1.08rem;
+    letter-spacing: -0.04em;
+  }
+
+  span,
+  p {
+    margin: 0;
+    color: var(--muted);
+  }
+}
+
+.sessionPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.sessionPill {
+  @include subtle-pill($min-height: 2rem, $padding-y: 0.34rem, $padding-x: 0.68rem);
+  background: color-mix(in srgb, var(--surface-elevated) 74%, transparent);
+  font-size: 0.82rem;
+}
+
+.note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .fieldGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .modeSwitch,
+  .actionRow,
+  .primaryAction,
+  .secondaryAction,
+  .signOutButton {
+    width: 100%;
+  }
+}
