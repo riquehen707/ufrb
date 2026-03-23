@@ -30,6 +30,10 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 SUPABASE_SERVICE_ROLE_KEY=
 DONATION_WEBHOOK_SECRET=
+PICPAY_CLIENT_ID=
+PICPAY_CLIENT_SECRET=
+PICPAY_WEBHOOK_TOKEN=
+PICPAY_API_BASE_URL=https://checkout-api.picpay.com
 ```
 
 3. Execute o projeto:
@@ -51,6 +55,9 @@ npm run dev
 5. Para confirmacao de doacoes, configure tambem:
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `DONATION_WEBHOOK_SECRET`
+   - `PICPAY_CLIENT_ID`
+   - `PICPAY_CLIENT_SECRET`
+   - `PICPAY_WEBHOOK_TOKEN`
 
 Observacao: o feed tenta ler a tabela `listings`. Se ela estiver vazia, a interface exibe dados de demonstracao.
 
@@ -58,8 +65,21 @@ Observacao: o feed tenta ler a tabela `listings`. Se ela estiver vazia, a interf
 
 - `POST /api/donations` registra um apoio em `pending` e gera uma referencia.
 - `POST /api/donations/confirm` confirma ou cancela a doacao.
+- `POST /api/donations/picpay/webhook` recebe a notificacao automatica do PicPay.
 - Quando a doacao entra como `confirmed`, o trigger atualiza `support_balance` e `support_count` no perfil do apoiador.
 - A rota de confirmacao espera o header `x-donation-webhook-secret`.
+
+## PicPay
+
+1. Gere `client_id` e `client_secret` no painel do PicPay.
+2. Configure a URL de notificacao como:
+   - `https://SEU-PROJETO.vercel.app/api/donations/picpay/webhook`
+3. Salve o token de autenticacao exibido pelo PicPay em `PICPAY_WEBHOOK_TOKEN`.
+4. Adicione `PICPAY_CLIENT_ID`, `PICPAY_CLIENT_SECRET` e `PICPAY_WEBHOOK_TOKEN` na Vercel.
+
+Observacoes:
+- O formulario pede `e-mail`, `CPF` e `celular` quando o Pix do PicPay estiver ativo.
+- Sem dominio proprio, voce pode usar a URL `*.vercel.app` normalmente.
 
 ## Deploy na Vercel
 
@@ -71,6 +91,9 @@ Observacao: o feed tenta ler a tabela `listings`. Se ela estiver vazia, a interf
    - `NEXT_PUBLIC_SITE_URL`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `DONATION_WEBHOOK_SECRET`
+   - `PICPAY_CLIENT_ID`
+   - `PICPAY_CLIENT_SECRET`
+   - `PICPAY_WEBHOOK_TOKEN`
 3. Faca o deploy.
 
 Com HTTPS ativo, o navegador passa a habilitar instalacao PWA normalmente.

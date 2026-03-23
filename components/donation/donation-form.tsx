@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState, useTransition } from "react";
 import { Copy, HeartHandshake } from "lucide-react";
 
@@ -9,6 +10,8 @@ import { donationPixKey, donationPixName } from "@/lib/supabase/env";
 type SupportState = {
   donorName: string;
   donorEmail: string;
+  donorDocument: string;
+  donorPhone: string;
   amount: string;
   method: string;
   note: string;
@@ -18,6 +21,10 @@ type SupportState = {
 type ReceiptState = {
   paymentReference: string;
   amount: number;
+  provider?: string;
+  qrCode?: string | null;
+  qrCodeBase64?: string | null;
+  expiresAt?: string | null;
 } | null;
 
 type MessageState =
@@ -32,18 +39,25 @@ const suggestedAmounts = ["10", "20", "35", "50"];
 const initialState: SupportState = {
   donorName: "",
   donorEmail: "",
+  donorDocument: "",
+  donorPhone: "",
   amount: suggestedAmounts[1],
   method: "pix",
   note: "",
   isPublic: true,
 };
 
-export function DonationForm() {
+type DonationFormProps = {
+  picpayEnabled?: boolean;
+};
+
+export function DonationForm({ picpayEnabled = false }: DonationFormProps) {
   const [support, setSupport] = useState<SupportState>(initialState);
   const [message, setMessage] = useState<MessageState>(null);
   const [receipt, setReceipt] = useState<ReceiptState>(null);
   const [copied, setCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const requiresPicPayFields = picpayEnabled && support.method === "pix";
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -85,11 +99,13 @@ export function DonationForm() {
   }
 
   async function copyPixKey() {
-    if (!donationPixKey) {
+    const value = receipt?.qrCode ?? donationPixKey;
+
+    if (!value) {
       return;
     }
 
-    await navigator.clipboard.writeText(donationPixKey);
+    await navigator.clipboard.writeText(value);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
   }
@@ -109,6 +125,19 @@ export function DonationForm() {
       return;
     }
 
+    if (
+      requiresPicPayFields &&
+      (!support.donorEmail.trim() ||
+        !support.donorDocument.trim() ||
+        !support.donorPhone.trim())
+    ) {
+      setMessage({
+        tone: "error",
+        text: "E-mail, CPF e celular sao obrigatorios para gerar o Pix.",
+      });
+      return;
+    }
+
     startTransition(() => {
       void (async () => {
         try {
@@ -120,6 +149,8 @@ export function DonationForm() {
             body: JSON.stringify({
               donorName: support.donorName.trim(),
               donorEmail: support.donorEmail.trim() || null,
+              donorDocument: support.donorDocument.trim() || null,
+              donorPhone: support.donorPhone.trim() || null,
               amount,
               method: support.method,
               note: support.note.trim() || null,
@@ -132,6 +163,10 @@ export function DonationForm() {
                 error?: string;
                 paymentReference?: string;
                 amount?: number;
+                provider?: string;
+                qrCode?: string | null;
+                qrCodeBase64?: string | null;
+                expiresAt?: string | null;
               }
             | null;
 
@@ -146,15 +181,23 @@ export function DonationForm() {
           setReceipt({
             paymentReference: result.paymentReference,
             amount: result.amount ?? amount,
+            provider: result.provider,
+            qrCode: result.qrCode ?? null,
+            qrCodeBase64: result.qrCodeBase64 ?? null,
+            expiresAt: result.expiresAt ?? null,
           });
           setMessage({
             tone: "success",
-            text: "Apoio registrado. Quando o pagamento for confirmado, ele entra no teu perfil.",
+            text:
+              result.provider === "picpay"
+                ? "Pix gerado. Quando o pagamento cair, o apoio entra no teu perfil."
+                : "Apoio registrado. Quando o pagamento for confirmado, ele entra no teu perfil.",
           });
           setSupport((current) => ({
             ...initialState,
             donorName: current.donorName,
             donorEmail: current.donorEmail,
+            donorPhone: current.donorPhone,
           }));
         } catch {
           setMessage({
@@ -212,9 +255,42 @@ export function DonationForm() {
                 placeholder="voce@email.com"
                 value={support.donorEmail}
                 onChange={(event) => updateField("donorEmail", event.target.value)}
+                required={requiresPicPayFields}
               />
             </div>
           </div>
+
+          {requiresPicPayFields ? (
+            <div className="field-grid">
+              <div className="field">
+                <label htmlFor="donor-document">CPF</label>
+                <input
+                  id="donor-document"
+                  className="input-field"
+                  inputMode="numeric"
+                  placeholder="000.000.000-00"
+                  value={support.donorDocument}
+                  onChange={(event) =>
+                    updateField("donorDocument", event.target.value)
+                  }
+                  required
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="donor-phone">Celular</label>
+                <input
+                  id="donor-phone"
+                  className="input-field"
+                  inputMode="tel"
+                  placeholder="(71) 99999-9999"
+                  value={support.donorPhone}
+                  onChange={(event) => updateField("donorPhone", event.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          ) : null}
 
           <div className="field-grid">
             <div className="field">
@@ -292,10 +368,32 @@ export function DonationForm() {
             <strong>Referencia</strong>
             <p>{receipt.paymentReference}</p>
             <code>R$ {receipt.amount.toFixed(2).replace(".", ",")}</code>
+            {receipt.expiresAt ? (
+              <small>Expira em {new Date(receipt.expiresAt).toLocaleString("pt-BR")}</small>
+            ) : null}
           </div>
         ) : null}
 
-        {donationPixKey ? (
+        {receipt?.qrCode ? (
+          <div className="pix-card">
+            <strong>Pix gerado</strong>
+            {receipt.qrCodeBase64 ? (
+              <Image
+                src={receipt.qrCodeBase64}
+                alt="QR Code Pix do apoio"
+                width={220}
+                height={220}
+                style={{ width: "100%", maxWidth: 220, borderRadius: 16, height: "auto" }}
+                unoptimized
+              />
+            ) : null}
+            <code>{receipt.qrCode}</code>
+            <button className="secondary-button" type="button" onClick={copyPixKey}>
+              <Copy size={16} />
+              {copied ? "Copiado" : "Copiar codigo Pix"}
+            </button>
+          </div>
+        ) : donationPixKey ? (
           <div className="pix-card">
             <strong>Chave Pix</strong>
             <p>{donationPixName}</p>
@@ -307,7 +405,9 @@ export function DonationForm() {
           </div>
         ) : (
           <div className="status-banner" data-tone="info">
-            Configura a chave Pix para liberar o pagamento rapido.
+            {picpayEnabled
+              ? "Escolhe Pix para gerar um QR Code de pagamento."
+              : "Configura a chave Pix para liberar o pagamento rapido."}
           </div>
         )}
       </aside>

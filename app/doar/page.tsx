@@ -5,6 +5,7 @@ import { DonationSupportWall } from "@/components/donation/donation-support-wall
 import { PageShell } from "@/components/shell/page-shell";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { getDonationOverview } from "@/lib/donations";
+import { isPicPayConfigured } from "@/lib/payments/picpay";
 
 export const metadata: Metadata = {
   title: "Doar",
@@ -26,7 +27,7 @@ export default async function DonatePage() {
           />
         </section>
 
-        <DonationForm />
+        <DonationForm picpayEnabled={isPicPayConfigured()} />
         <DonationSupportWall overview={overview} />
       </div>
     </PageShell>

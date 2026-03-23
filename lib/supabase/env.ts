@@ -9,7 +9,16 @@ export const donationPixName =
 export const donationWebhookSecret = process.env.DONATION_WEBHOOK_SECRET;
 export const listingMediaBucket =
   process.env.NEXT_PUBLIC_SUPABASE_LISTING_BUCKET ?? "listing-media";
+export const picpayApiBaseUrl =
+  process.env.PICPAY_API_BASE_URL ?? "https://checkout-api.picpay.com";
+export const picpayClientId = process.env.PICPAY_CLIENT_ID;
+export const picpayClientSecret = process.env.PICPAY_CLIENT_SECRET;
+export const picpayWebhookToken = process.env.PICPAY_WEBHOOK_TOKEN;
 
 export function isSupabaseConfigured() {
   return Boolean(supabaseUrl && supabaseAnonKey);
+}
+
+export function isPicPayConfigured() {
+  return Boolean(picpayClientId && picpayClientSecret);
 }
