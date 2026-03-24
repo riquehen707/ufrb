@@ -6,10 +6,15 @@ import { useInstallPrompt } from "@/components/engagement/install-provider";
 
 type Props = {
   className?: string;
+  hiddenWhenInstalled?: boolean;
 };
 
-export function InstallAppButton({ className }: Props) {
+export function InstallAppButton({ className, hiddenWhenInstalled = false }: Props) {
   const { installLabel, isStandalone, openInstall } = useInstallPrompt();
+
+  if (hiddenWhenInstalled && isStandalone) {
+    return null;
+  }
 
   return (
     <button

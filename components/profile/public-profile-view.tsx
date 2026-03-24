@@ -33,6 +33,10 @@ function getInstagramHref(handle: string) {
   return `https://instagram.com/${handle.replace(/^@/, "")}`;
 }
 
+function getProfileRatingLabel(value: number, hasReviews: boolean) {
+  return hasReviews ? value.toFixed(1) : "Sem avaliacoes";
+}
+
 export function PublicProfileView({ profile, listings }: Props) {
   const catalogSectionId = "catalogo-vendedor";
   const activeLocations = Array.from(
@@ -77,24 +81,24 @@ export function PublicProfileView({ profile, listings }: Props) {
       <section className={styles.statsGrid}>
         <article className={styles.statCard}>
           <span>Confianca</span>
-          <strong>{profile.reliabilityScore.toFixed(1)}</strong>
+          <strong>{getProfileRatingLabel(profile.reliabilityScore, profile.reviewCount > 0)}</strong>
         </article>
         <article className={styles.statCard}>
           <span>Produtos</span>
-          <strong>{profile.productRating.toFixed(1)}</strong>
+          <strong>{getProfileRatingLabel(profile.productRating, profile.reviewCount > 0)}</strong>
         </article>
         <article className={styles.statCard}>
           <span>Servicos</span>
-          <strong>{profile.serviceRating.toFixed(1)}</strong>
+          <strong>{getProfileRatingLabel(profile.serviceRating, profile.reviewCount > 0)}</strong>
         </article>
         <article className={styles.statCard}>
           <span>Transporte</span>
-          <strong>{profile.transportRating.toFixed(1)}</strong>
+          <strong>{getProfileRatingLabel(profile.transportRating, profile.reviewCount > 0)}</strong>
         </article>
         <article className={styles.statCard}>
           <span>Moradia</span>
           <strong>
-            {profile.housingReviewCount ? profile.housingRating.toFixed(1) : "Novo"}
+            {getProfileRatingLabel(profile.housingRating, profile.housingReviewCount > 0)}
           </strong>
         </article>
         {profile.supportCount ? (

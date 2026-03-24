@@ -43,11 +43,11 @@ export function SignupCard() {
         Conta
       </span>
 
-      <h2>{activeAccount ? "Conta ativa" : "Entrar no CAMPUS"}</h2>
+      <h2>{activeAccount ? "Conta pronta" : "Entrar quando fizer sentido"}</h2>
       <p>
         {activeAccount
-          ? "Perfil pronto para circular oportunidades."
-          : "Ganhe dinheiro, encontre ajuda e resolva a vida no campus."}
+          ? "Teu perfil ja esta pronto para publicar, responder e acompanhar conversas."
+          : "Cria tua conta para publicar, conversar e acompanhar pedidos sem perder o que aparecer."}
       </p>
 
       {activeAccount ? (
@@ -63,7 +63,7 @@ export function SignupCard() {
         </Link>
 
         <Link className="secondary-button" href={activeAccount ? "/perfil/editar" : "/feed"}>
-          {activeAccount ? "Editar perfil" : "Ver oportunidades"}
+          {activeAccount ? "Editar perfil" : "Explorar primeiro"}
           <ArrowRight size={18} />
         </Link>
       </div>

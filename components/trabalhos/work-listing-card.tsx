@@ -13,6 +13,10 @@ type Props = {
   actionLabel: string;
 };
 
+function getListingRatingLabel(rating: number) {
+  return rating > 0 ? rating.toFixed(1) : "Sem avaliacoes";
+}
+
 export function WorkListingCard({ listing, actionLabel }: Props) {
   const intentTone = listing.intent === "offer" ? "success" : "info";
   const intentLabel = listing.intent === "offer" ? "Oferta" : "Demanda";
@@ -53,7 +57,7 @@ export function WorkListingCard({ listing, actionLabel }: Props) {
         <div className={styles.side}>
           <span className={styles.rating}>
             <ShieldCheck size={14} />
-            {listing.rating.toFixed(1)}
+            {getListingRatingLabel(listing.rating)}
           </span>
           <span className={styles.action}>
             {actionLabel}

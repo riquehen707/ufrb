@@ -83,7 +83,7 @@ export function normalizeListing(row: ListingRow): Listing {
     campus: row.campus ?? "Campus a combinar",
     sellerName: row.seller_name ?? "Perfil universitario",
     sellerCourse: row.seller_course ?? "Comunidade academica",
-    rating: row.rating ? Number(row.rating) : 4.7,
+    rating: row.rating ? Number(row.rating) : 0,
     deliveryMode: row.delivery_mode ?? "Combinado pelo campus",
     featured: Boolean(row.featured),
     description:

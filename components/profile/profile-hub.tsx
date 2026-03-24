@@ -40,6 +40,10 @@ function getInstagramHref(handle: string) {
   return `https://instagram.com/${handle.replace(/^@/, "")}`;
 }
 
+function getProfileRatingLabel(value: number, hasReviews: boolean) {
+  return hasReviews ? value.toFixed(1) : "Sem avaliacoes";
+}
+
 export function ProfileHub({
   profile,
   listings,
@@ -112,7 +116,7 @@ export function ProfileHub({
       <section className={styles.previewGrid}>
         <article className={styles.statCard}>
           <span>Confianca</span>
-          <strong>{profile.reliabilityScore.toFixed(1)}</strong>
+          <strong>{getProfileRatingLabel(profile.reliabilityScore, profile.reviewCount > 0)}</strong>
         </article>
         <article className={styles.statCard}>
           <span>Apoio dado</span>
@@ -121,7 +125,7 @@ export function ProfileHub({
         <article className={styles.statCard}>
           <span>Moradia</span>
           <strong>
-            {profile.housingReviewCount ? profile.housingRating.toFixed(1) : "Novo"}
+            {getProfileRatingLabel(profile.housingRating, profile.housingReviewCount > 0)}
           </strong>
         </article>
         <article className={styles.statCard}>
@@ -212,7 +216,7 @@ export function ProfileHub({
             <strong>Locais</strong>
           </div>
           <div className={styles.locationList}>
-            {activeLocations.map((location) => (
+            {(activeLocations.length ? activeLocations : [profile.campus]).map((location) => (
               <span key={location} className={styles.locationPill}>
                 {location}
               </span>

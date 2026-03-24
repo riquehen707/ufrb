@@ -32,6 +32,10 @@ type ListingDetailPageProps = {
   }>;
 };
 
+function getListingRatingLabel(rating: number) {
+  return rating > 0 ? rating.toFixed(1) : "Sem avaliacoes";
+}
+
 export default async function ListingDetailPage({
   params,
 }: ListingDetailPageProps) {
@@ -114,7 +118,7 @@ export default async function ListingDetailPage({
                 <span className="listing-detail-meta-item">{listing.deliveryMode}</span>
                 <span className="listing-detail-meta-item">
                   <Star size={15} />
-                  {listing.rating.toFixed(1)}
+                  {getListingRatingLabel(listing.rating)}
                 </span>
               </div>
 

@@ -19,11 +19,8 @@ export default function Icon() {
           justifyContent: "center",
           position: "relative",
           background:
-            "linear-gradient(145deg, rgb(13, 17, 23), rgb(31, 39, 50))",
-          color: "white",
-          fontSize: 204,
-          fontWeight: 800,
-          letterSpacing: "-0.08em",
+            "linear-gradient(145deg, rgb(255, 255, 255), rgb(248, 250, 252))",
+          color: "rgb(17, 22, 29)",
         }}
       >
         <div
@@ -31,25 +28,47 @@ export default function Icon() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: 348,
-            height: 348,
-            borderRadius: 96,
+            width: 360,
+            height: 360,
+            borderRadius: 108,
             background:
-              "linear-gradient(145deg, rgb(255, 45, 111), rgb(199, 15, 77))",
-            boxShadow: "0 0 0 16px rgba(255,255,255,0.06)",
+              "linear-gradient(145deg, rgba(255,255,255,0.98), rgba(248,250,252,0.94))",
+            boxShadow:
+              "0 18px 42px rgba(17,22,29,0.12), inset 0 1px 0 rgba(255,255,255,0.7)",
+            border: "1px solid rgba(255, 45, 111, 0.12)",
           }}
         >
-          C
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 256,
+              height: 256,
+              borderRadius: 76,
+              background:
+                "linear-gradient(145deg, rgb(255, 45, 111), rgb(199, 15, 77))",
+              color: "white",
+              fontSize: 156,
+              fontWeight: 800,
+              letterSpacing: "-0.08em",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22)",
+            }}
+          >
+            C
+          </div>
         </div>
         <div
           style={{
             position: "absolute",
-            right: 116,
-            bottom: 120,
-            width: 46,
-            height: 46,
+            right: 180,
+            bottom: 174,
+            width: 60,
+            height: 60,
             borderRadius: 999,
-            background: "rgb(255, 193, 214)",
+            background:
+              "linear-gradient(145deg, rgb(255,255,255), rgb(255,241,245))",
+            boxShadow: "0 0 0 12px rgba(255, 45, 111, 0.14)",
           }}
         />
       </div>

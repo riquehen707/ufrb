@@ -14,6 +14,8 @@ type CategoryCard = {
   eyebrow: string;
   note: string;
   href: string;
+  action: string;
+  tone: "study" | "home" | "work" | "move";
   icon: LucideIcon;
 };
 
@@ -21,15 +23,19 @@ const categoryCards: CategoryCard[] = [
   {
     title: "Livros e materiais",
     eyebrow: "Trocas e vendas",
-    note: "Academicos, leitura e materiais do curso.",
+    note: "Academicos, leitura e itens que ainda circulam bem no campus.",
     href: "/feed?type=product&category=Livros",
+    action: "Ver materiais",
+    tone: "study",
     icon: BookMarked,
   },
   {
     title: "Moradia",
     eyebrow: "Casa e convivencia",
-    note: "Quartos, republicas, alugueis e vagas para dividir.",
+    note: "Quartos, republicas, alugueis e vagas para dividir com mais clareza.",
     href: "/feed?type=product&category=Moradia",
+    action: "Buscar moradia",
+    tone: "home",
     icon: House,
   },
   {
@@ -37,6 +43,8 @@ const categoryCards: CategoryCard[] = [
     eyebrow: "Ajuda academica",
     note: "Monitoria, reforco, grupos e professores disponiveis.",
     href: "/trabalhos?aba=aulas",
+    action: "Dar aula",
+    tone: "study",
     icon: GraduationCap,
   },
   {
@@ -44,13 +52,17 @@ const categoryCards: CategoryCard[] = [
     eyebrow: "Rotas e horarios",
     note: "Caronas recorrentes e grupos para dividir a corrida.",
     href: "/trabalhos?aba=transporte",
+    action: "Ver rotas",
+    tone: "move",
     icon: BusFront,
   },
   {
     title: "Servicos gerais",
     eyebrow: "Pequenos corres",
-    note: "Instalacao, reparo, design, ajuda pratica e mais.",
+    note: "Instalacao, reparo, design, limpeza e ajuda pratica.",
     href: "/trabalhos?aba=servicos",
+    action: "Publicar servico",
+    tone: "work",
     icon: Wrench,
   },
   {
@@ -58,6 +70,8 @@ const categoryCards: CategoryCard[] = [
     eyebrow: "O que falta resolver",
     note: "Pedidos reais de estudantes buscando ajuda agora.",
     href: "/feed?intent=request",
+    action: "Ver demandas",
+    tone: "work",
     icon: HandCoins,
   },
 ] as const;
@@ -70,21 +84,26 @@ export function HomeCategoryCarousel() {
     >
       <div className="container home-category-shell">
         <div className="home-section-head">
-          <span className="eyebrow">Oportunidades</span>
-          <h2 id="home-category-title">Comeca pelo que faz sentido para tua rotina.</h2>
-          <p>
-            Produtos, moradia, aulas, transporte e servicos organizados de um jeito
-            rapido de entender.
-          </p>
+          <span className="eyebrow">Frentes principais</span>
+          <h2 id="home-category-title">Escolhe por onde tua rotina aperta primeiro.</h2>
+          <p>Estudo, casa, renda extra, transporte e demandas em cards mais diretos.</p>
         </div>
 
         <div className="home-category-marquee">
           <div className="home-category-track">
-            {categoryCards.map(({ title, eyebrow, note, href, icon: Icon }) => (
-              <Link key={title} href={href} className="home-category-card">
-                <span className="home-category-icon">
-                  <Icon size={20} />
-                </span>
+            {categoryCards.map(({ title, eyebrow, note, href, action, tone, icon: Icon }) => (
+              <Link
+                key={title}
+                href={href}
+                className="home-category-card"
+                data-tone={tone}
+              >
+                <div className="home-category-topline">
+                  <span className="home-category-icon">
+                    <Icon size={20} />
+                  </span>
+                  <span className="home-category-action">{action}</span>
+                </div>
 
                 <div className="home-category-copy">
                   <span className="home-category-eyebrow">{eyebrow}</span>
@@ -92,7 +111,7 @@ export function HomeCategoryCarousel() {
                   <span>{note}</span>
                 </div>
 
-                <span className="home-category-link">Explorar</span>
+                <span className="home-category-link">{action}</span>
               </Link>
             ))}
           </div>

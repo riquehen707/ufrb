@@ -46,6 +46,10 @@ function getSellerInitials(name: string) {
     .join("");
 }
 
+function getListingRatingLabel(rating: number) {
+  return rating > 0 ? rating.toFixed(1) : "Sem avaliacoes";
+}
+
 export function MarketplaceListingCard({ listing, priceHeadline }: Props) {
   const intentTone = listing.intent === "request" ? "info" : "success";
   const MediaIcon = listing.type === "service" ? BriefcaseBusiness : Package;
@@ -145,7 +149,7 @@ export function MarketplaceListingCard({ listing, priceHeadline }: Props) {
 
           <span className={styles.ratingChip}>
             <Star size={14} />
-            {listing.rating.toFixed(1)}
+            {getListingRatingLabel(listing.rating)}
           </span>
         </div>
 

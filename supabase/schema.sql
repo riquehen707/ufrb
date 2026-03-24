@@ -62,10 +62,10 @@ create table if not exists public.profiles (
   contact_phone text,
   instagram_handle text,
   verified_student boolean not null default false,
-  reliability_score numeric(3,2) not null default 5.0,
-  product_rating numeric(3,2) not null default 5.0,
-  service_rating numeric(3,2) not null default 5.0,
-  transport_rating numeric(3,2) not null default 5.0,
+  reliability_score numeric(3,2) not null default 0,
+  product_rating numeric(3,2) not null default 0,
+  service_rating numeric(3,2) not null default 0,
+  transport_rating numeric(3,2) not null default 0,
   housing_rating numeric(3,2) not null default 0,
   housing_review_count integer not null default 0,
   support_balance numeric(10,2) not null default 0,
@@ -82,15 +82,20 @@ alter table public.profiles
   add column if not exists contact_phone text,
   add column if not exists instagram_handle text,
   add column if not exists verified_student boolean not null default false,
-  add column if not exists reliability_score numeric(3,2) not null default 5.0,
-  add column if not exists product_rating numeric(3,2) not null default 5.0,
-  add column if not exists service_rating numeric(3,2) not null default 5.0,
-  add column if not exists transport_rating numeric(3,2) not null default 5.0,
+  add column if not exists reliability_score numeric(3,2) not null default 0,
+  add column if not exists product_rating numeric(3,2) not null default 0,
+  add column if not exists service_rating numeric(3,2) not null default 0,
+  add column if not exists transport_rating numeric(3,2) not null default 0,
   add column if not exists housing_rating numeric(3,2) not null default 0,
   add column if not exists housing_review_count integer not null default 0,
   add column if not exists support_balance numeric(10,2) not null default 0,
   add column if not exists support_count integer not null default 0,
   add column if not exists review_count integer not null default 0;
+
+alter table public.profiles alter column reliability_score set default 0;
+alter table public.profiles alter column product_rating set default 0;
+alter table public.profiles alter column service_rating set default 0;
+alter table public.profiles alter column transport_rating set default 0;
 
 create table if not exists public.listings (
   id uuid primary key default gen_random_uuid(),
@@ -116,12 +121,14 @@ create table if not exists public.listings (
   price_unit text,
   delivery_mode text not null default 'Combinado pelo campus',
   tags text[] not null default '{}',
-  rating numeric(3,2) not null default 4.8,
+  rating numeric(3,2) not null default 0,
   featured boolean not null default false,
   status text not null default 'active' check (status in ('active', 'draft', 'sold')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.listings alter column rating set default 0;
 
 alter table public.listings
   add column if not exists intent text not null default 'offer',
@@ -412,7 +419,7 @@ begin
         where reviewed_profile_id = target_profile
           and review_type = 'product'
       ),
-      5
+      0
     ),
     service_rating = coalesce(
       (
@@ -421,7 +428,7 @@ begin
         where reviewed_profile_id = target_profile
           and review_type = 'service'
       ),
-      5
+      0
     ),
     housing_rating = coalesce(
       (
@@ -449,7 +456,7 @@ begin
           where reviewed_profile_id = target_profile
         ) ratings
       ),
-      5
+      0
     ),
     review_count = (
       select count(*)
