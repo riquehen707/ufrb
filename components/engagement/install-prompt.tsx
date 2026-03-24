@@ -17,45 +17,51 @@ export function InstallPrompt() {
     serviceWorkerReady,
   } = useInstallPrompt();
 
+  if (isStandalone) {
+    return null;
+  }
+
   return (
-    <aside className="install-card">
+    <aside className="install-card install-card-compact" id="baixar-app">
       <span className="account-chip">
         <Download size={16} />
         App
       </span>
-      <h3>Levar tua rede pro celular</h3>
-      <p>{browserLabel}</p>
+      <h3>No celular fica mais rapido</h3>
+      <p>
+        {canInstallDirectly
+          ? `${browserLabel} ja pode instalar o CAMPUS como app.`
+          : `Se quiser usar como app, instala pelo ${browserLabel}.`}
+      </p>
 
-      <div className="install-status">
-        <span
-          className="status-pill"
-          data-tone={serviceWorkerReady ? "success" : "info"}
-        >
-          <ShieldCheck size={14} />
-          {installStatusLabel}
-        </span>
-        <span
-          className="status-pill"
-          data-tone={isOnline ? "success" : "warning"}
-        >
-          {isOnline ? <Wifi size={14} /> : <WifiOff size={14} />}
-          {isOnline ? "Online" : "Offline"}
-        </span>
-      </div>
-
-      {isStandalone ? (
-        <div className="status-banner" data-tone="success">
-          Ja esta no teu celular.
+      <div className="install-card-row">
+        <div className="install-status">
+          <span
+            className="status-pill"
+            data-tone={serviceWorkerReady ? "success" : "info"}
+          >
+            <ShieldCheck size={14} />
+            {installStatusLabel}
+          </span>
+          <span
+            className="status-pill"
+            data-tone={isOnline ? "success" : "warning"}
+          >
+            {isOnline ? <Wifi size={14} /> : <WifiOff size={14} />}
+            {isOnline ? "Online" : "Offline"}
+          </span>
         </div>
-      ) : canInstallDirectly ? (
+
+        {canInstallDirectly ? (
         <button className="action-button" type="button" onClick={() => void promptInstall()}>
           {installLabel}
         </button>
-      ) : (
-        <div className="status-banner" data-tone="info">
+        ) : (
+        <div className="install-inline-note">
           {installHint}
         </div>
-      )}
+        )}
+      </div>
     </aside>
   );
 }

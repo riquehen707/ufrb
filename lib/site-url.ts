@@ -1,3 +1,7 @@
+type SiteUrlOptions = {
+  preferBrowserOrigin?: boolean;
+};
+
 function normalizeSiteUrl(siteUrl?: string | null) {
   if (!siteUrl) {
     return null;
@@ -14,17 +18,18 @@ function shouldPreferBrowserOrigin(siteUrl?: string | null) {
   return /localhost|127\.0\.0\.1/i.test(siteUrl);
 }
 
-export function getSiteUrl() {
+export function getSiteUrl(options: SiteUrlOptions = {}) {
   const envSiteUrl = normalizeSiteUrl(
     process.env.NEXT_PUBLIC_SITE_URL ??
       process.env.VERCEL_PROJECT_PRODUCTION_URL ??
       process.env.VERCEL_URL,
   );
+  const preferBrowserOrigin = options.preferBrowserOrigin ?? false;
 
   if (typeof window !== "undefined") {
-    const browserOrigin = window.location.origin;
+    const browserOrigin = normalizeSiteUrl(window.location.origin);
 
-    if (browserOrigin && shouldPreferBrowserOrigin(envSiteUrl)) {
+    if (browserOrigin && (preferBrowserOrigin || shouldPreferBrowserOrigin(envSiteUrl))) {
       return browserOrigin;
     }
 
@@ -38,7 +43,10 @@ export function getSiteUrl() {
 
 export function getAuthCallbackUrl(next = "/") {
   const safeNext = next.startsWith("/") ? next : "/";
-  const callbackUrl = new URL("/auth/callback", getSiteUrl());
+  const callbackUrl = new URL(
+    "/auth/callback",
+    getSiteUrl({ preferBrowserOrigin: true }),
+  );
 
   callbackUrl.searchParams.set("next", safeNext);
 

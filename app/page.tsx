@@ -2,27 +2,23 @@ import { InstallPrompt } from "@/components/engagement/install-prompt";
 import { SignupCard } from "@/components/engagement/signup-card";
 import { HomeCategoryCarousel } from "@/components/home/home-category-carousel";
 import { HomeHero } from "@/components/home/home-hero";
-import { HomePurposeStrip } from "@/components/home/home-purpose-strip";
+import { HomeStoryRail } from "@/components/home/home-story-rail";
 import { PageShell } from "@/components/shell/page-shell";
-import { getMarketplaceData } from "@/lib/marketplace";
 
-export default async function Home() {
-  const marketplace = await getMarketplaceData();
-
+export default function Home() {
   return (
     <PageShell>
       <>
-        <HomeHero listings={marketplace.listings} />
+        <HomeHero />
         <HomeCategoryCarousel />
+        <HomeStoryRail />
 
-        <section className="section home-utility-section" id="baixar-app">
+        <section className="section home-utility-section">
           <div className="container home-utility-grid">
-            <InstallPrompt />
             <SignupCard />
+            <InstallPrompt />
           </div>
         </section>
-
-        <HomePurposeStrip />
       </>
     </PageShell>
   );

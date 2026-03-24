@@ -860,3 +860,50 @@ create policy "housing_reviews_owner_insert"
 on public.housing_reviews
 for insert
 with check ((select auth.uid()) = reviewer_id);
+
+insert into storage.buckets (id, name, public)
+values ('listing-media', 'listing-media', true)
+on conflict (id) do update
+set
+  name = excluded.name,
+  public = excluded.public;
+
+drop policy if exists "listing_media_public_read" on storage.objects;
+create policy "listing_media_public_read"
+on storage.objects
+for select
+using (bucket_id = 'listing-media');
+
+drop policy if exists "listing_media_authenticated_insert" on storage.objects;
+create policy "listing_media_authenticated_insert"
+on storage.objects
+for insert
+to authenticated
+with check (
+  bucket_id = 'listing-media'
+  and (storage.foldername(name))[1] = (select auth.uid()::text)
+);
+
+drop policy if exists "listing_media_authenticated_update" on storage.objects;
+create policy "listing_media_authenticated_update"
+on storage.objects
+for update
+to authenticated
+using (
+  bucket_id = 'listing-media'
+  and (storage.foldername(name))[1] = (select auth.uid()::text)
+)
+with check (
+  bucket_id = 'listing-media'
+  and (storage.foldername(name))[1] = (select auth.uid()::text)
+);
+
+drop policy if exists "listing_media_authenticated_delete" on storage.objects;
+create policy "listing_media_authenticated_delete"
+on storage.objects
+for delete
+to authenticated
+using (
+  bucket_id = 'listing-media'
+  and (storage.foldername(name))[1] = (select auth.uid()::text)
+);

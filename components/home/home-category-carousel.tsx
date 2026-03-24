@@ -11,6 +11,7 @@ import {
 
 type CategoryCard = {
   title: string;
+  eyebrow: string;
   note: string;
   href: string;
   icon: LucideIcon;
@@ -18,46 +19,50 @@ type CategoryCard = {
 
 const categoryCards: CategoryCard[] = [
   {
-    title: "Livros",
-    note: "Academicos e lazer",
+    title: "Livros e materiais",
+    eyebrow: "Trocas e vendas",
+    note: "Academicos, leitura e materiais do curso.",
     href: "/feed?type=product&category=Livros",
     icon: BookMarked,
   },
   {
     title: "Moradia",
-    note: "Quarto e republica",
+    eyebrow: "Casa e convivencia",
+    note: "Quartos, republicas, alugueis e vagas para dividir.",
     href: "/feed?type=product&category=Moradia",
     icon: House,
   },
   {
     title: "Aulas",
-    note: "Monitoria e reforco",
+    eyebrow: "Ajuda academica",
+    note: "Monitoria, reforco, grupos e professores disponiveis.",
     href: "/trabalhos?aba=aulas",
     icon: GraduationCap,
   },
   {
     title: "Transporte",
-    note: "Rotas e grupos",
-    href: "/trabalhos",
+    eyebrow: "Rotas e horarios",
+    note: "Caronas recorrentes e grupos para dividir a corrida.",
+    href: "/trabalhos?aba=transporte",
     icon: BusFront,
   },
   {
     title: "Servicos gerais",
-    note: "Casa e pequenos corres",
+    eyebrow: "Pequenos corres",
+    note: "Instalacao, reparo, design, ajuda pratica e mais.",
     href: "/trabalhos?aba=servicos",
     icon: Wrench,
   },
   {
-    title: "Demandas",
-    note: "Problemas pra resolver",
+    title: "Demandas abertas",
+    eyebrow: "O que falta resolver",
+    note: "Pedidos reais de estudantes buscando ajuda agora.",
     href: "/feed?intent=request",
     icon: HandCoins,
   },
-];
+] as const;
 
 export function HomeCategoryCarousel() {
-  const loopedCards = [...categoryCards, ...categoryCards];
-
   return (
     <section
       className="section home-category-section"
@@ -66,32 +71,30 @@ export function HomeCategoryCarousel() {
       <div className="container home-category-shell">
         <div className="home-section-head">
           <span className="eyebrow">Oportunidades</span>
-          <h2 id="home-category-title">Explora o que move a vida no campus</h2>
+          <h2 id="home-category-title">Comeca pelo que faz sentido para tua rotina.</h2>
+          <p>
+            Produtos, moradia, aulas, transporte e servicos organizados de um jeito
+            rapido de entender.
+          </p>
         </div>
 
         <div className="home-category-marquee">
           <div className="home-category-track">
-            {loopedCards.map(({ title, note, href, icon: Icon }, index) => {
-              const duplicate = index >= categoryCards.length;
+            {categoryCards.map(({ title, eyebrow, note, href, icon: Icon }) => (
+              <Link key={title} href={href} className="home-category-card">
+                <span className="home-category-icon">
+                  <Icon size={20} />
+                </span>
 
-              return (
-                <Link
-                  key={`${title}-${duplicate ? "copy" : "base"}`}
-                  href={href}
-                  className="home-category-card"
-                  aria-hidden={duplicate ? true : undefined}
-                  tabIndex={duplicate ? -1 : undefined}
-                >
-                  <span className="home-category-icon">
-                    <Icon size={18} />
-                  </span>
-                  <div className="home-category-copy">
-                    <strong>{title}</strong>
-                    <span>{note}</span>
-                  </div>
-                </Link>
-              );
-            })}
+                <div className="home-category-copy">
+                  <span className="home-category-eyebrow">{eyebrow}</span>
+                  <strong>{title}</strong>
+                  <span>{note}</span>
+                </div>
+
+                <span className="home-category-link">Explorar</span>
+              </Link>
+            ))}
           </div>
         </div>
       </div>
