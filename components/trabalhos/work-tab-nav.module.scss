@@ -1,119 +1,117 @@
+@use "../../styles/design-system" as *;
+
 .strip {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(16rem, 1fr);
-  gap: 0.65rem;
-  overflow-x: auto;
-  padding-bottom: 0.08rem;
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
 }
 
 .tab {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.72rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  padding: 0.82rem 0.86rem;
-  border: 1px solid color-mix(in srgb, var(--text) 5%, var(--line));
-  border-radius: 0.95rem;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--surface-strong) 94%, transparent),
-      color-mix(in srgb, var(--surface) 90%, transparent)
-    );
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--bg-surface);
   text-align: left;
   transition:
     border-color var(--motion-duration-normal) var(--motion-easing-standard),
-    background var(--motion-duration-normal) var(--motion-easing-standard),
-    box-shadow var(--motion-duration-normal) var(--motion-easing-standard);
+    box-shadow var(--motion-duration-normal) var(--motion-easing-standard),
+    transform var(--motion-duration-normal) var(--motion-easing-standard);
 
-  &:hover,
-  &:focus-visible {
-    border-color: color-mix(in srgb, var(--accent) 18%, var(--line));
+  &:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--action-primary) 18%, var(--border-default));
     box-shadow: var(--shadow-sm);
+  }
+
+  &:focus-visible {
+    @include focus-ring();
   }
 }
 
 .tabActive {
-  border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
+  border-color: color-mix(in srgb, var(--action-primary) 24%, var(--border-default));
+  box-shadow: var(--shadow-sm);
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--accent) 10%, var(--surface-strong)),
-      color-mix(in srgb, var(--surface) 92%, transparent)
+      color-mix(in srgb, var(--action-primary) 7%, white),
+      var(--bg-surface)
     );
 }
 
 .icon {
-  display: grid;
-  place-items: center;
-  width: 2.8rem;
-  height: 2.8rem;
-  border-radius: 0.88rem;
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--accent) 24%, transparent),
-      color-mix(in srgb, var(--primary) 18%, transparent)
-    );
-
-  svg {
-    color: var(--text);
-  }
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid color-mix(in srgb, var(--action-primary) 16%, var(--border-default));
+  border-radius: 0.95rem;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--action-primary) 10%, white), var(--bg-surface));
+  color: var(--text-primary);
 }
 
 .copy {
   display: grid;
-  gap: 0.14rem;
+  gap: 0.18rem;
   min-width: 0;
 
   strong {
     font-family: var(--font-display), sans-serif;
     font-size: 1rem;
     letter-spacing: -0.04em;
+    line-height: 1.04;
   }
 
   span {
-    color: var(--muted);
-    line-height: 1.42;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: 1.45;
   }
 }
 
-@media (max-width: 640px) {
+.count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.2rem;
+  min-height: 2.2rem;
+  padding: 0 0.6rem;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface-muted);
+  color: var(--text-primary);
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.92rem;
+  font-weight: var(--font-weight-semibold);
+}
+
+@media (max-width: 900px) {
   .strip {
-    grid-auto-columns: minmax(13.8rem, 1fr);
-  }
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(15rem, 80vw);
+    grid-template-columns: none;
+    overflow-x: auto;
+    padding-bottom: 0.08rem;
+    scrollbar-width: none;
 
-  .tab {
-    padding: 0.76rem 0.78rem;
-    border-radius: 0.88rem;
-  }
-
-  .icon {
-    width: 2.55rem;
-    height: 2.55rem;
-    border-radius: 0.8rem;
-  }
-
-  .copy {
-    span {
-      font-size: 0.84rem;
+    &::-webkit-scrollbar {
+      display: none;
     }
   }
 }
 
-@media (max-width: 420px) {
-  .strip {
-    grid-auto-columns: minmax(11.8rem, 80vw);
+@media (max-width: 520px) {
+  .tab {
+    gap: var(--space-2);
+    padding: var(--space-3);
   }
 
-  .tab {
-    gap: 0.62rem;
-    padding: 0.72rem;
+  .icon {
+    width: 2.7rem;
+    height: 2.7rem;
   }
 }

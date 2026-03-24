@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BusFront, Clock3, Coins, MapPin, Navigation, Route, UsersRound } from "lucide-react";
+import { BusFront, Clock3, MapPin, Navigation, Route, UsersRound } from "lucide-react";
 
+import styles from "@/components/trabalhos/transport-workspace.module.scss";
+import { WorkListingCard } from "@/components/trabalhos/work-listing-card";
+import type { Listing } from "@/lib/listings";
 import { readPermissionState, type AppPermissionState } from "@/lib/permissions";
 import {
-  buildTransportRoutePlan,
-  getRoutePointById,
-  getTransportGroupById,
+  estimateTransport,
+  getTopWorkFocuses,
+  getWorkListingStats,
   routePoints,
-  transportGroups,
 } from "@/lib/work-hub";
 
 const moneyFormatter = new Intl.NumberFormat("pt-BR", {
@@ -18,28 +20,26 @@ const moneyFormatter = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 2,
 });
 
+type Props = {
+  listings: Listing[];
+};
+
 type DeviceLocation = {
   lat: number;
   lng: number;
   label: string;
 };
 
-export function TransportWorkspace() {
-  const initialGroup = transportGroups[0];
-  const [role, setRole] = useState<"driver" | "rider">("rider");
-  const [activeGroupId, setActiveGroupId] = useState(initialGroup?.id ?? "");
-  const [originId, setOriginId] = useState(
-    initialGroup?.originPointId ?? routePoints[1]?.id ?? routePoints[0].id,
-  );
-  const [destinationId, setDestinationId] = useState(
-    initialGroup?.destinationPointId ?? routePoints[0].id,
-  );
-  const [departureTime, setDepartureTime] = useState(
-    initialGroup?.departureTime ?? "07:10",
-  );
-  const [ridersCount, setRidersCount] = useState(
-    Math.max(1, initialGroup?.seatsFilled ?? 4),
-  );
+export function TransportWorkspace({ listings }: Props) {
+  const stats = getWorkListingStats(listings);
+  const offers = listings.filter((listing) => listing.intent === "offer");
+  const requests = listings.filter((listing) => listing.intent === "request");
+  const focuses = getTopWorkFocuses(listings);
+
+  const [originId, setOriginId] = useState(routePoints[1]?.id ?? routePoints[0].id);
+  const [destinationId, setDestinationId] = useState(routePoints[0].id);
+  const [departureTime, setDepartureTime] = useState("07:10");
+  const [ridersCount, setRidersCount] = useState(3);
   const [deviceLocation, setDeviceLocation] = useState<DeviceLocation | null>(null);
   const [locationPermission, setLocationPermission] =
     useState<AppPermissionState>("unsupported");
@@ -50,14 +50,17 @@ export function TransportWorkspace() {
   const [isLocating, setIsLocating] = useState(false);
 
   const selectedOrigin = routePoints.find((point) => point.id === originId) ?? routePoints[0];
-  const activeGroup = getTransportGroupById(activeGroupId);
-  const routePlan = useMemo(
+  const selectedDestination =
+    routePoints.find((point) => point.id === destinationId) ?? routePoints[0];
+
+  const routeEstimate = useMemo(
     () =>
-      buildTransportRoutePlan(activeGroup, {
-        customStart: deviceLocation ?? selectedOrigin,
-        customDestinationId: destinationId,
-      }),
-    [activeGroup, destinationId, deviceLocation, selectedOrigin],
+      estimateTransport(
+        deviceLocation ?? selectedOrigin,
+        selectedDestination,
+        ridersCount,
+      ),
+    [deviceLocation, ridersCount, selectedDestination, selectedOrigin],
   );
 
   useEffect(() => {
@@ -81,7 +84,7 @@ export function TransportWorkspace() {
     if (currentPermission === "denied") {
       setLocationMessage({
         tone: "error",
-        text: "Libera a localizacao do navegador para usar tua rota atual.",
+        text: "Libera a localizacao do navegador para ajustar teu ponto de saida.",
       });
       return;
     }
@@ -97,7 +100,7 @@ export function TransportWorkspace() {
     setIsLocating(true);
     setLocationMessage({
       tone: "info",
-      text: "Pedindo tua localizacao para ajustar a rota.",
+      text: "Buscando tua localizacao para estimar a rota.",
     });
 
     navigator.geolocation.getCurrentPosition(
@@ -111,7 +114,7 @@ export function TransportWorkspace() {
         setLocationPermission("granted");
         setLocationMessage({
           tone: "success",
-          text: "Localizacao adicionada ao trajeto.",
+          text: "Localizacao adicionada ao calculo.",
         });
       },
       () => {
@@ -134,87 +137,52 @@ export function TransportWorkspace() {
     setDeviceLocation(null);
     setLocationMessage({
       tone: "info",
-      text: "Voltamos para o ponto manual.",
+      text: "Voltamos para o ponto manual da rota.",
     });
   }
 
-  function activateGroup(groupId: string) {
-    const matchingGroup = getTransportGroupById(groupId);
-    setActiveGroupId(groupId);
-    setDepartureTime(matchingGroup.departureTime);
-    setOriginId(matchingGroup.originPointId);
-    setDestinationId(matchingGroup.destinationPointId);
-    setRidersCount(Math.max(1, matchingGroup.seatsFilled));
-  }
-
   return (
-    <div className="work-stack">
-      <section className="work-highlight-grid">
-        <article className="work-metric-card">
+    <div className={styles.stack}>
+      <section className={styles.metrics}>
+        <article className={styles.metricCard}>
           <BusFront size={18} />
-          <strong>{activeGroup.driverLabel}</strong>
-          <span>motorista</span>
+          <strong>{offers.length}</strong>
+          <span>rotas publicadas</span>
         </article>
-        <article className="work-metric-card">
-          <Clock3 size={18} />
-          <strong>{routePlan.durationMinutes} min</strong>
-          <span>rota estimada</span>
-        </article>
-        <article className="work-metric-card">
+        <article className={styles.metricCard}>
           <UsersRound size={18} />
-          <strong>{routePlan.pickupCount}</strong>
-          <span>inscritos</span>
+          <strong>{requests.length}</strong>
+          <span>pedidos de transporte</span>
+        </article>
+        <article className={styles.metricCard}>
+          <Route size={18} />
+          <strong>{stats.campusCount || 1}</strong>
+          <span>campi ou cidades</span>
         </article>
       </section>
 
-      <section className="transport-planner-grid">
-        <article className="work-card work-card-strong">
-          <div className="work-card-header">
+      {focuses.length ? (
+        <div className={styles.focusRow} aria-label="Recortes de transporte">
+          {focuses.map((focus) => (
+            <span key={focus} className={styles.focusChip}>
+              {focus}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+      <section className={styles.plannerGrid}>
+        <article className={styles.panel}>
+          <div className={styles.panelHeader}>
             <div>
               <span className="eyebrow">Planejar</span>
-              <h2>Fechar grupo por horario</h2>
+              <h2>Estimativa rapida da rota</h2>
             </div>
           </div>
 
-          <div className="toggle-group">
-            <span className="toggle-label">Meu papel</span>
-            <div className="type-switch" role="tablist" aria-label="Papel no transporte">
-              <button
-                type="button"
-                className={`type-pill ${role === "rider" ? "active" : ""}`}
-                onClick={() => setRole("rider")}
-              >
-                Preciso ser buscado
-              </button>
-              <button
-                type="button"
-                className={`type-pill ${role === "driver" ? "active" : ""}`}
-                onClick={() => setRole("driver")}
-              >
-                Vou buscar
-              </button>
-            </div>
-          </div>
-
-          <div className="field-grid">
+          <div className={styles.fieldGrid}>
             <div className="field">
-              <label htmlFor="transport-group">Horario com grupo</label>
-              <select
-                id="transport-group"
-                className="select-field"
-                value={activeGroupId}
-                onChange={(event) => activateGroup(event.target.value)}
-              >
-                {transportGroups.map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.departureTime} · {group.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="field">
-              <label htmlFor="transport-origin">Ponto de partida</label>
+              <label htmlFor="transport-origin">Saida</label>
               <select
                 id="transport-origin"
                 className="select-field"
@@ -247,7 +215,7 @@ export function TransportWorkspace() {
             </div>
           </div>
 
-          <div className="field-grid">
+          <div className={styles.fieldGrid}>
             <div className="field">
               <label htmlFor="transport-time">Horario</label>
               <input
@@ -260,7 +228,7 @@ export function TransportWorkspace() {
             </div>
 
             <div className="field">
-              <label htmlFor="transport-riders">Pessoas nesse horario</label>
+              <label htmlFor="transport-riders">Pessoas</label>
               <input
                 id="transport-riders"
                 className="input-field"
@@ -277,7 +245,7 @@ export function TransportWorkspace() {
             </div>
           </div>
 
-          <div className="media-action-row">
+          <div className={styles.actionRow}>
             <button
               type="button"
               className="ghost-button"
@@ -291,13 +259,13 @@ export function TransportWorkspace() {
             {deviceLocation ? (
               <button type="button" className="ghost-button" onClick={clearDeviceLocation}>
                 <MapPin size={16} />
-                Ponto manual
+                Voltar para ponto manual
               </button>
             ) : null}
           </div>
 
-          <div className="permission-chip-row" aria-label="Permissao de localizacao">
-            <span className="active-filter-pill">
+          <div className={styles.permissionRow}>
+            <span className={styles.permissionChip}>
               Localizacao{" "}
               {locationPermission === "granted"
                 ? "liberada"
@@ -314,125 +282,101 @@ export function TransportWorkspace() {
           ) : null}
         </article>
 
-        <article className="work-card work-estimate-card">
-          <span className="account-chip">
-            <Route size={16} />
-            Rota automatica
-          </span>
+        <article className={styles.estimateCard}>
+          <div className={styles.panelHeader}>
+            <div>
+              <span className="eyebrow">Estimativa</span>
+              <h2>
+                {(deviceLocation?.label ?? selectedOrigin.label)} ate{" "}
+                {selectedDestination.label}
+              </h2>
+            </div>
+          </div>
 
-          <h3>
-            {routePlan.startLabel} ate {routePlan.endLabel}
-          </h3>
-
-          <div className="work-estimate-grid">
-            <article className="mini-stat-card">
+          <div className={styles.estimateGrid}>
+            <article className={styles.estimateMetric}>
               <span>Distancia</span>
-              <strong>{routePlan.totalDistanceKm.toFixed(1)} km</strong>
+              <strong>{routeEstimate.distanceKm.toFixed(1)} km</strong>
             </article>
-            <article className="mini-stat-card">
+            <article className={styles.estimateMetric}>
               <span>Tempo</span>
-              <strong>{routePlan.durationMinutes} min</strong>
+              <strong>{routeEstimate.durationMinutes} min</strong>
             </article>
-            <article className="mini-stat-card">
-              <span>Total da corrida</span>
-              <strong>{moneyFormatter.format(routePlan.totalFare)}</strong>
+            <article className={styles.estimateMetric}>
+              <span>Total</span>
+              <strong>{moneyFormatter.format(routeEstimate.totalFare)}</strong>
             </article>
-            <article className="mini-stat-card">
-              <span>Rateio por pessoa</span>
-              <strong>{moneyFormatter.format(routePlan.splitFare)}</strong>
+            <article className={styles.estimateMetric}>
+              <span>Por pessoa</span>
+              <strong>{moneyFormatter.format(routeEstimate.splitFare)}</strong>
             </article>
           </div>
 
-          <div className="work-inline-note">
-            {role === "driver"
-              ? `Se tu fizer essa rota agora, a corrida fecha em ${moneyFormatter.format(routePlan.totalFare)}.`
-              : `Entrando nesse horario, tua parte fica em ${moneyFormatter.format(routePlan.splitFare)}.`}
-          </div>
-
-          <div className="transport-route-list" aria-label="Ordem sugerida de paradas">
-            {routePlan.stops.map((stop, index) => (
-              <article key={stop.pointId} className="transport-route-stop">
-                <span className="transport-route-index">{index + 1}</span>
-                <div className="transport-route-copy">
-                  <strong>{stop.label}</strong>
-                  <span>
-                    {stop.pickupCount} pessoa(s) · {stop.riderNames.join(", ")}
-                  </span>
-                </div>
-                <span className="transport-route-meta">
-                  +{stop.distanceFromPreviousKm.toFixed(1)} km
-                </span>
-              </article>
-            ))}
-
-            <article className="transport-route-stop transport-route-stop-arrival">
-              <span className="transport-route-index">
-                {routePlan.stops.length + 1}
-              </span>
-              <div className="transport-route-copy">
-                <strong>{getRoutePointById(activeGroup.destinationPointId).label}</strong>
-                <span>Chegada final do grupo.</span>
-              </div>
-              <span className="transport-route-meta">
-                +{routePlan.finalLegDistanceKm.toFixed(1)} km
-              </span>
-            </article>
+          <div className={styles.noteCard}>
+            <Clock3 size={16} />
+            <p>
+              Saindo as <strong>{departureTime}</strong>, o app estima uma corrida de{" "}
+              <strong>{moneyFormatter.format(routeEstimate.totalFare)}</strong> e um rateio
+              de <strong>{moneyFormatter.format(routeEstimate.splitFare)}</strong> por pessoa.
+            </p>
           </div>
         </article>
       </section>
 
-      <section className="work-card">
-        <div className="work-card-header">
-          <div>
-            <span className="eyebrow">Grupos</span>
-            <h3>Horarios abertos</h3>
+      <section className={styles.board}>
+        <article className={styles.panel}>
+          <div className={styles.panelHeader}>
+            <div>
+              <span className="eyebrow">Rotas publicadas</span>
+              <h2>Quem esta oferecendo transporte</h2>
+            </div>
+            <span className={styles.countChip}>{offers.length}</span>
           </div>
-        </div>
 
-        <div className="work-board-grid">
-          {transportGroups.map((group) => (
-            <article
-              key={group.id}
-              className={`work-demand-card ${activeGroupId === group.id ? "work-demand-card-active" : ""}`}
-            >
-              <div className="work-demand-topline">
-                <span className="status-pill" data-tone="info">
-                  {group.departureTime}
-                </span>
-                <span className="status-pill" data-tone="success">
-                  {group.seatsFilled}/{group.seatTotal} pessoas
-                </span>
-              </div>
+          {offers.length ? (
+            <div className={styles.cardGrid}>
+              {offers.map((listing) => (
+                <WorkListingCard
+                  key={listing.id}
+                  listing={listing}
+                  actionLabel="Ver rota"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className={styles.emptyState}>
+              <strong>Ainda nao existe rota publicada nessa aba.</strong>
+              <p>Quando estudantes abrirem rotas reais, elas aparecem aqui.</p>
+            </div>
+          )}
+        </article>
 
-              <h4>{group.title}</h4>
-              <p>{group.routeLabel}</p>
+        <article className={styles.panel}>
+          <div className={styles.panelHeader}>
+            <div>
+              <span className="eyebrow">Pedidos</span>
+              <h2>Quem esta buscando transporte</h2>
+            </div>
+            <span className={styles.countChip}>{requests.length}</span>
+          </div>
 
-              <div className="work-demand-meta">
-                <span>
-                  <Route size={14} />
-                  {buildTransportRoutePlan(group).totalDistanceKm.toFixed(1)} km
-                </span>
-                <span>
-                  <Coins size={14} />
-                  {moneyFormatter.format(buildTransportRoutePlan(group).splitFare)} por pessoa
-                </span>
-              </div>
-
-              <div className="work-action-row">
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => activateGroup(group.id)}
-                >
-                  Planejar rota
-                </button>
-                <button type="button" className="ghost-button">
-                  Entrar nesse horario
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
+          {requests.length ? (
+            <div className={styles.cardGrid}>
+              {requests.map((listing) => (
+                <WorkListingCard
+                  key={listing.id}
+                  listing={listing}
+                  actionLabel="Responder pedido"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className={styles.emptyState}>
+              <strong>Sem pedidos abertos por enquanto.</strong>
+              <p>Assim que alguem procurar transporte, a demanda aparece aqui.</p>
+            </div>
+          )}
+        </article>
       </section>
     </div>
   );

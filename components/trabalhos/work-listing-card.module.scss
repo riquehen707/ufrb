@@ -1,0 +1,129 @@
+@use "../../styles/design-system" as *;
+
+.card {
+  @include card-shell();
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  color: inherit;
+  text-decoration: none;
+}
+
+.topline,
+.metaRow,
+.footer,
+.side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.focusChip {
+  @include subtle-pill(
+    $min-height: 2rem,
+    $radius: var(--radius-pill),
+    $padding-y: 0.32rem,
+    $padding-x: 0.62rem
+  );
+  color: var(--text-secondary);
+}
+
+.copy {
+  display: grid;
+  gap: var(--space-2);
+
+  h3 {
+    margin: 0;
+    font-family: var(--font-display), sans-serif;
+    font-size: 1.08rem;
+    letter-spacing: -0.04em;
+    line-height: 1.02;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.58;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+.metaRow {
+  justify-content: space-between;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.34rem;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+  }
+}
+
+.footer {
+  justify-content: space-between;
+}
+
+.seller {
+  display: grid;
+  gap: 0.08rem;
+  min-width: 0;
+
+  strong {
+    font-size: var(--font-size-sm);
+    line-height: 1.1;
+  }
+
+  span {
+    color: var(--text-tertiary);
+    font-size: 0.82rem;
+    line-height: 1.3;
+  }
+}
+
+.side {
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.rating,
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  min-height: 2rem;
+  padding: 0.34rem 0.62rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.82rem;
+  font-weight: var(--font-weight-medium);
+}
+
+.rating {
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface-muted);
+  color: var(--text-primary);
+}
+
+.action {
+  color: var(--text-primary);
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: var(--space-3);
+  }
+
+  .footer {
+    align-items: stretch;
+  }
+
+  .side {
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+  }
+}

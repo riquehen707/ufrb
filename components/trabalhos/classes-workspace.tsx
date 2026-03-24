@@ -1,161 +1,120 @@
-import { BookOpenText, Coins, GraduationCap, UsersRound } from "lucide-react";
+import { BookOpenText, GraduationCap, UsersRound } from "lucide-react";
 
-import {
-  classDemands,
-  studyGroups,
-  teacherProfiles,
-} from "@/lib/work-hub";
+import styles from "@/components/trabalhos/classes-workspace.module.scss";
+import { WorkListingCard } from "@/components/trabalhos/work-listing-card";
+import type { Listing } from "@/lib/listings";
+import { getTopWorkFocuses, getWorkListingStats } from "@/lib/work-hub";
 
-const moneyFormatter = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  maximumFractionDigits: 0,
-});
+type Props = {
+  listings: Listing[];
+};
 
-export function ClassesWorkspace() {
+export function ClassesWorkspace({ listings }: Props) {
+  const stats = getWorkListingStats(listings);
+  const offers = listings.filter((listing) => listing.intent === "offer");
+  const requests = listings.filter((listing) => listing.intent === "request");
+  const groupListings = listings.filter((listing) =>
+    listing.focus?.toLowerCase().includes("grupo"),
+  );
+  const focuses = getTopWorkFocuses(listings);
+
   return (
-    <div className="work-stack">
-      <section className="work-highlight-grid">
-        <article className="work-metric-card">
+    <div className={styles.stack}>
+      <section className={styles.metrics}>
+        <article className={styles.metricCard}>
           <GraduationCap size={18} />
-          <strong>{teacherProfiles.length}</strong>
-          <span>professores</span>
+          <strong>{offers.length}</strong>
+          <span>quem pode ensinar</span>
         </article>
-        <article className="work-metric-card">
+        <article className={styles.metricCard}>
           <BookOpenText size={18} />
-          <strong>{classDemands.length}</strong>
-          <span>demandas</span>
+          <strong>{requests.length}</strong>
+          <span>pedidos de ajuda</span>
         </article>
-        <article className="work-metric-card">
+        <article className={styles.metricCard}>
           <UsersRound size={18} />
-          <strong>{studyGroups.length}</strong>
-          <span>turmas</span>
+          <strong>{groupListings.length}</strong>
+          <span>formatos em grupo</span>
         </article>
       </section>
 
-      <section className="work-split-grid">
-        <article className="work-card work-card-strong">
-          <div className="work-card-header">
-            <div>
-              <span className="eyebrow">Ensinar</span>
-              <h2>Demandas e turmas</h2>
-            </div>
-          </div>
-
-          <div className="work-board-grid">
-            {classDemands.map((demand) => (
-              <article key={demand.id} className="work-demand-card">
-                <div className="work-demand-topline">
-                  <span className="status-pill" data-tone="info">
-                    {demand.audience}
-                  </span>
-                  <span className="status-pill" data-tone="warning">
-                    {demand.format}
-                  </span>
-                </div>
-
-                <h4>{demand.title}</h4>
-                <p>{demand.location}</p>
-
-                <div className="work-demand-meta">
-                  <span>
-                    <Coins size={14} />
-                    ate {moneyFormatter.format(demand.budget)} / hora
-                  </span>
-                  <span>
-                    <UsersRound size={14} />
-                    {demand.studentsWaiting} aluno(s) esperando
-                  </span>
-                </div>
-
-                <div className="work-inline-note">{demand.timing}</div>
-                <button type="button" className="primary-button">
-                  Entrar nessa demanda
-                </button>
-              </article>
-            ))}
-          </div>
-        </article>
-
-        <article className="work-card">
-          <div className="work-card-header">
-            <div>
-              <span className="eyebrow">Aprender</span>
-              <h3>Professores e grupos</h3>
-            </div>
-          </div>
-
-          <div className="work-list-stack">
-            {teacherProfiles.map((teacher) => (
-              <article key={teacher.id} className="work-profile-card">
-                <div className="work-profile-main">
-                  <div>
-                    <strong>{teacher.name}</strong>
-                    <p>{teacher.headline}</p>
-                  </div>
-                  <div className="work-profile-meta">
-                    <span>{teacher.campus}</span>
-                    <span>Nota geral {teacher.reliability.toFixed(1)}</span>
-                    <span>Aulas {teacher.rating.toFixed(1)}</span>
-                  </div>
-                </div>
-
-                <div className="tag-row">
-                  {teacher.specialties.map((specialty) => (
-                    <span key={specialty} className="tag">
-                      {specialty}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="work-action-row">
-                  {teacher.actions.map((action) => (
-                    <button key={action} type="button" className="ghost-button">
-                      {action}
-                    </button>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
-        </article>
-      </section>
-
-      <section className="work-card">
-        <div className="work-card-header">
-          <div>
-            <span className="eyebrow">Grupos</span>
-            <h3>Turmas abertas</h3>
-          </div>
-        </div>
-
-        <div className="work-board-grid">
-          {studyGroups.map((group) => (
-            <article key={group.id} className="work-demand-card">
-              <div className="work-demand-topline">
-                <span className="status-pill" data-tone="success">
-                  {group.audience}
-                </span>
-                <span className="status-pill" data-tone="info">
-                  {group.openSlots}/{group.totalSlots} vagas
-                </span>
-              </div>
-
-              <h4>{group.title}</h4>
-              <p>{group.location}</p>
-
-              <div className="work-demand-meta">
-                <span>{group.timing}</span>
-                <span>{moneyFormatter.format(group.perStudent)} por aluno</span>
-              </div>
-
-              <button type="button" className="secondary-button">
-                Inscrever-se no grupo
-              </button>
-            </article>
+      {focuses.length ? (
+        <div className={styles.focusRow} aria-label="Recortes de aulas">
+          {focuses.map((focus) => (
+            <span key={focus} className={styles.focusChip}>
+              {focus}
+            </span>
           ))}
         </div>
+      ) : null}
+
+      <section className={styles.board}>
+        <article className={styles.panel}>
+          <div className={styles.panelHeader}>
+            <div>
+              <span className="eyebrow">Quem pode ensinar</span>
+              <h2>Professores, monitores e grupos abertos</h2>
+            </div>
+            <span className={styles.countChip}>{offers.length}</span>
+          </div>
+
+          {offers.length ? (
+            <div className={styles.cardGrid}>
+              {offers.map((listing) => (
+                <WorkListingCard
+                  key={listing.id}
+                  listing={listing}
+                  actionLabel="Ver oportunidade"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className={styles.emptyState}>
+              <strong>Ainda nao existe nenhuma aula publicada nessa area.</strong>
+              <p>
+                Quando estudantes publicarem aulas e monitorias reais, elas aparecem aqui.
+              </p>
+            </div>
+          )}
+        </article>
+
+        <article className={styles.panel}>
+          <div className={styles.panelHeader}>
+            <div>
+              <span className="eyebrow">Pedidos de ajuda</span>
+              <h2>Demandas abertas para professor ou monitor</h2>
+            </div>
+            <span className={styles.countChip}>{requests.length}</span>
+          </div>
+
+          {requests.length ? (
+            <div className={styles.cardGrid}>
+              {requests.map((listing) => (
+                <WorkListingCard
+                  key={listing.id}
+                  listing={listing}
+                  actionLabel="Responder demanda"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className={styles.emptyState}>
+              <strong>Sem demandas abertas por enquanto.</strong>
+              <p>Assim que alguem pedir ajuda academica, essa lista se atualiza.</p>
+            </div>
+          )}
+        </article>
       </section>
+
+      {stats.total ? (
+        <div className={styles.noteCard}>
+          <strong>Como usar melhor essa aba</strong>
+          <p>
+            Publicacoes com foco claro como particular, grupo, banca ou ensino medio
+            ficam muito mais faceis de encontrar aqui.
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 }

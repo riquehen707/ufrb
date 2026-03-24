@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Clock3, Route, ShieldCheck } from "lucide-react";
+import { BadgeCent, BriefcaseBusiness, BusFront, GraduationCap } from "lucide-react";
 
 import { ClassesWorkspace } from "@/components/trabalhos/classes-workspace";
 import { GeneralServicesWorkspace } from "@/components/trabalhos/general-services-workspace";
@@ -10,67 +10,122 @@ import { TransportWorkspace } from "@/components/trabalhos/transport-workspace";
 import { WorkTabNav } from "@/components/trabalhos/work-tab-nav";
 import styles from "@/components/trabalhos/work-hub.module.scss";
 import type { Listing } from "@/lib/listings";
-import { getWorkTab, type WorkTabId, workTabs } from "@/lib/work-hub";
+import {
+  getWorkListingStats,
+  getWorkTab,
+  type WorkTabId,
+  workTabs,
+} from "@/lib/work-hub";
 
 type Props = {
   initialTab: WorkTabId;
+  classListings: Listing[];
+  transportListings: Listing[];
   serviceListings: Listing[];
 };
 
-const tabHighlights: Record<
-  WorkTabId,
-  Array<{ label: string; value: string; icon: typeof Clock3 }>
-> = {
-  transporte: [
-    { label: "Horarios", value: "saida e volta", icon: Clock3 },
-    { label: "Rota", value: "distancia e rateio", icon: Route },
-    { label: "Confianca", value: "ocupacao e nota", icon: ShieldCheck },
-  ],
-  aulas: [
-    { label: "Formato", value: "particular ou grupo", icon: Clock3 },
-    { label: "Jornada", value: "prof e aluno", icon: Route },
-    { label: "Confianca", value: "nota e recorrencia", icon: ShieldCheck },
-  ],
-  servicos: [
-    { label: "Escopo", value: "pedido claro", icon: Clock3 },
-    { label: "Local", value: "casa e campus", icon: Route },
-    { label: "Confianca", value: "perfil e nota", icon: ShieldCheck },
-  ],
-};
+const moneyFormatter = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  maximumFractionDigits: 0,
+});
 
-export function WorkHub({ initialTab, serviceListings }: Props) {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState<WorkTabId>(initialTab);
-  const activeConfig = getWorkTab(activeTab);
-  const resolvedHighlights = useMemo(() => {
-    if (activeTab !== "servicos") {
-      return tabHighlights[activeTab];
-    }
+function getStatCards(tabId: WorkTabId, listings: Listing[]) {
+  const stats = getWorkListingStats(listings);
 
-    const offers = serviceListings.filter((listing) => listing.intent === "offer").length;
-    const requests = serviceListings.filter((listing) => listing.intent === "request").length;
-    const scopes = new Set(
-      serviceListings.map((listing) => listing.focus).filter(Boolean),
-    ).size;
+  if (tabId === "aulas") {
+    const groupCount = listings.filter((listing) =>
+      listing.focus?.toLowerCase().includes("grupo"),
+    ).length;
 
     return [
       {
-        label: "Prestadores",
-        value: offers ? `${offers} ativos` : "sem oferta",
-        icon: Clock3,
+        label: "Quem ensina",
+        value: String(stats.offers),
+        icon: GraduationCap,
       },
       {
-        label: "Demandas",
-        value: requests ? `${requests} abertas` : "sem demanda",
-        icon: Route,
+        label: "Pedidos",
+        value: String(stats.requests),
+        icon: BriefcaseBusiness,
       },
       {
-        label: "Escopos",
-        value: scopes ? `${scopes} recortes` : "sem recorte",
-        icon: ShieldCheck,
+        label: "Grupo",
+        value: String(groupCount),
+        icon: BadgeCent,
       },
     ];
-  }, [activeTab, serviceListings]);
+  }
+
+  if (tabId === "transporte") {
+    return [
+      {
+        label: "Rotas",
+        value: String(stats.offers),
+        icon: BusFront,
+      },
+      {
+        label: "Pedidos",
+        value: String(stats.requests),
+        icon: BriefcaseBusiness,
+      },
+      {
+        label: "Campi",
+        value: String(stats.campusCount || 1),
+        icon: BadgeCent,
+      },
+    ];
+  }
+
+  return [
+    {
+      label: "Prestadores",
+      value: String(stats.offers),
+      icon: BriefcaseBusiness,
+    },
+    {
+      label: "Demandas",
+      value: String(stats.requests),
+      icon: GraduationCap,
+    },
+    {
+      label: "Faixa media",
+      value: stats.averagePrice ? moneyFormatter.format(stats.averagePrice) : "Sem faixa",
+      icon: BadgeCent,
+    },
+  ];
+}
+
+export function WorkHub({
+  initialTab,
+  classListings,
+  transportListings,
+  serviceListings,
+}: Props) {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<WorkTabId>(initialTab);
+
+  const listingsByTab = useMemo(
+    () => ({
+      aulas: classListings,
+      transporte: transportListings,
+      servicos: serviceListings,
+    }),
+    [classListings, serviceListings, transportListings],
+  );
+
+  const counts = useMemo(
+    () => ({
+      aulas: classListings.length,
+      transporte: transportListings.length,
+      servicos: serviceListings.length,
+    }),
+    [classListings.length, serviceListings.length, transportListings.length],
+  );
+
+  const activeConfig = getWorkTab(activeTab);
+  const activeListings = listingsByTab[activeTab];
+  const statCards = getStatCards(activeTab, activeListings);
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -78,9 +133,7 @@ export function WorkHub({ initialTab, serviceListings }: Props) {
 
   useEffect(() => {
     const nextHref =
-      activeTab === "transporte"
-        ? "/trabalhos"
-        : `/trabalhos?aba=${activeTab}`;
+      activeTab === "transporte" ? "/trabalhos" : `/trabalhos?aba=${activeTab}`;
 
     router.replace(nextHref, { scroll: false });
   }, [activeTab, router]);
@@ -88,35 +141,40 @@ export function WorkHub({ initialTab, serviceListings }: Props) {
   return (
     <section className={styles.hub} data-tab={activeTab}>
       <div className={styles.hero}>
-        <div className={styles.copy}>
+        <div className={styles.heroCopy}>
           <span className="eyebrow">Trabalhos</span>
-          <h2>{activeConfig.title}</h2>
+          <h1>{activeConfig.title}</h1>
           <p>{activeConfig.description}</p>
         </div>
 
-        <div className={styles.summaryGrid}>
-          {resolvedHighlights.map(({ label, value, icon: Icon }) => (
-            <article key={label} className={styles.summaryCard}>
-              <Icon size={16} />
-              <strong>{label}</strong>
-              <span>{value}</span>
+        <div className={styles.heroStats}>
+          {statCards.map(({ label, value, icon: Icon }) => (
+            <article key={label} className={styles.statCard}>
+              <Icon size={18} />
+              <strong>{value}</strong>
+              <span>{label}</span>
             </article>
           ))}
         </div>
       </div>
 
       <div className={styles.navWrap}>
-        <WorkTabNav tabs={workTabs} activeTab={activeTab} onChange={setActiveTab} />
+        <WorkTabNav
+          tabs={workTabs}
+          activeTab={activeTab}
+          counts={counts}
+          onChange={setActiveTab}
+        />
       </div>
 
-      <div className={styles.body}>
-        <div className={styles.workspaceFrame}>
-          {activeTab === "transporte" ? <TransportWorkspace /> : null}
-          {activeTab === "aulas" ? <ClassesWorkspace /> : null}
-          {activeTab === "servicos" ? (
-            <GeneralServicesWorkspace listings={serviceListings} />
-          ) : null}
-        </div>
+      <div className={styles.workspace}>
+        {activeTab === "transporte" ? (
+          <TransportWorkspace listings={transportListings} />
+        ) : null}
+        {activeTab === "aulas" ? <ClassesWorkspace listings={classListings} /> : null}
+        {activeTab === "servicos" ? (
+          <GeneralServicesWorkspace listings={serviceListings} />
+        ) : null}
       </div>
     </section>
   );

@@ -88,10 +88,10 @@
   gap: var(--space-3);
 }
 
-.emptyState {
+.emptyState,
+.noteCard {
   @include panel-card($padding: var(--space-4), $radius: var(--radius-card));
   gap: var(--space-2);
-  border-style: dashed;
 
   strong {
     font-family: var(--font-display), sans-serif;
@@ -105,9 +105,13 @@
   }
 }
 
+.emptyState {
+  border-style: dashed;
+}
+
 @media (max-width: 900px) {
-  .metrics,
-  .board {
+  .board,
+  .metrics {
     grid-template-columns: 1fr;
   }
 }
