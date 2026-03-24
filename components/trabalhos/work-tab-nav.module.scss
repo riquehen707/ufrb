@@ -28,19 +28,14 @@
     );
   text-align: left;
   transition:
-    transform 0.18s ease,
-    border-color 0.18s ease,
-    background 0.18s ease,
-    box-shadow 0.18s ease;
+    border-color var(--motion-duration-normal) var(--motion-easing-standard),
+    background var(--motion-duration-normal) var(--motion-easing-standard),
+    box-shadow var(--motion-duration-normal) var(--motion-easing-standard);
 
   &:hover,
   &:focus-visible {
     border-color: color-mix(in srgb, var(--accent) 18%, var(--line));
-    box-shadow: 0 16px 28px rgba(9, 11, 20, 0.12);
-  }
-
-  &:active {
-    transform: scale(0.988);
+    box-shadow: var(--shadow-sm);
   }
 }
 

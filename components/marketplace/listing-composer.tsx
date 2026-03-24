@@ -1354,8 +1354,14 @@ export function ListingComposer({
               {isPending
                 ? "Publicando..."
                 : draft.intent === "request"
-                  ? "Publicar demanda"
-                  : "Publicar oferta"}
+                  ? draft.category === "Moradia"
+                    ? "Buscar moradia"
+                    : "Encontrar ajuda"
+                  : draft.category === "Aulas e monitoria"
+                    ? "Dar aula"
+                    : draft.type === "service"
+                      ? "Publicar servico"
+                      : "Publicar produto"}
             </button>
             <Link className="secondary-button" href="/feed">
               Voltar ao feed

@@ -1,201 +1,53 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useDeferredValue, useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   ArrowLeft,
   BusFront,
   GraduationCap,
   MapPin,
   MessageCircleMore,
-  MoreVertical,
   PackageSearch,
-  Plus,
   Search,
   Send,
-  ShieldCheck,
+  Sparkles,
+  UserRound,
+  Wrench,
 } from "lucide-react";
 
 import styles from "@/components/chat/chat-shell.module.scss";
+import type { ChatScope, ChatThread } from "@/lib/chat";
 
-type ThreadScope = "all" | "products" | "classes" | "transport";
+type Props = {
+  threads: ChatThread[];
+  initialSelectedThreadId: string | null;
+  initialDraft?: string;
+  isAuthenticated: boolean;
+};
+
 type MobileStage = "list" | "thread";
-
-type MessageItem = {
+type ComposerMessage = {
   id: string;
-  author: "me" | "them";
   text: string;
   time: string;
+  createdAt: string;
 };
-
-type ChatThread = {
-  id: string;
-  scope: Exclude<ThreadScope, "all">;
-  title: string;
-  counterpart: string;
-  campus: string;
-  time: string;
-  unread: number;
-  status: string;
-  snippet: string;
-  actions: string[];
-  messages: MessageItem[];
-};
+type ThreadMessage = ChatThread["messages"][number];
 
 const scopeOptions: Array<{
-  id: ThreadScope;
+  id: "all" | ChatScope;
   label: string;
-  icon: typeof PackageSearch;
+  icon: typeof MessageCircleMore;
 }> = [
   { id: "all", label: "Tudo", icon: MessageCircleMore },
   { id: "products", label: "Produtos", icon: PackageSearch },
+  { id: "services", label: "Servicos", icon: Wrench },
   { id: "classes", label: "Aulas", icon: GraduationCap },
   { id: "transport", label: "Transporte", icon: BusFront },
 ];
 
-const threads: ChatThread[] = [
-  {
-    id: "thread-notebook",
-    scope: "products",
-    title: "Notebook Lenovo Ideapad",
-    counterpart: "Caio Ribeiro",
-    campus: "Cruz das Almas",
-    time: "agora",
-    unread: 2,
-    status: "Responde rapido",
-    snippet: "Fecho por R$ 2.150 se tu conseguir buscar ainda hoje no campus.",
-    actions: ["Mandar proposta", "Pedir fotos", "Ver anuncio"],
-    messages: [
-      {
-        id: "msg-1",
-        author: "them",
-        text: "Consigo levar perto do pavilhao 2 depois das 16h.",
-        time: "15:42",
-      },
-      {
-        id: "msg-2",
-        author: "me",
-        text: "Se eu confirmar agora, tu segura ate o fim da aula?",
-        time: "15:44",
-      },
-      {
-        id: "msg-3",
-        author: "them",
-        text: "Seguro sim. So me manda o horario certinho.",
-        time: "15:45",
-      },
-    ],
-  },
-  {
-    id: "thread-fisica",
-    scope: "classes",
-    title: "Fisica I particular",
-    counterpart: "Ana Beatriz",
-    campus: "Biblioteca central",
-    time: "12 min",
-    unread: 1,
-    status: "Aguardando horario",
-    snippet: "Quarta 18:30 funciona. Falta so bater o local e a primeira hora.",
-    actions: ["Confirmar aula", "Mandar local", "Ver perfil"],
-    messages: [
-      {
-        id: "msg-4",
-        author: "them",
-        text: "Quarta 18:30 funciona. Pode ser biblioteca ou online.",
-        time: "14:10",
-      },
-      {
-        id: "msg-5",
-        author: "me",
-        text: "Prefiro presencial. Vou sair do laboratorio 18:10.",
-        time: "14:16",
-      },
-      {
-        id: "msg-6",
-        author: "them",
-        text: "Perfeito. Te mando a mesa certinha quando eu chegar.",
-        time: "14:18",
-      },
-    ],
-  },
-  {
-    id: "thread-rodoviaria",
-    scope: "transport",
-    title: "Rodoviaria -> UFRB 07:10",
-    counterpart: "Grupo de manha",
-    campus: "Cruz das Almas",
-    time: "27 min",
-    unread: 0,
-    status: "Grupo quase cheio",
-    snippet: "Entrou mais uma pessoa. O rateio caiu para R$ 7,00 por pessoa.",
-    actions: ["Entrar no grupo", "Mandar local", "Ver rota"],
-    messages: [
-      {
-        id: "msg-7",
-        author: "them",
-        text: "Entrou mais uma pessoa no mesmo horario.",
-        time: "13:21",
-      },
-      {
-        id: "msg-8",
-        author: "them",
-        text: "O rateio caiu para R$ 7,00 por pessoa.",
-        time: "13:21",
-      },
-      {
-        id: "msg-9",
-        author: "me",
-        text: "Consigo estar na frente da rodoviaria 07:05.",
-        time: "13:24",
-      },
-    ],
-  },
-  {
-    id: "thread-tela",
-    scope: "products",
-    title: "Instalacao de tela na janela",
-    counterpart: "Luan Matos",
-    campus: "Republica perto do campus",
-    time: "1 h",
-    unread: 0,
-    status: "Visita combinada",
-    snippet: "Ele vai passar no fim da tarde para medir e fechar o valor.",
-    actions: ["Confirmar visita", "Mandar fotos", "Ver servico"],
-    messages: [
-      {
-        id: "msg-10",
-        author: "me",
-        text: "Te mandei as fotos da janela e das medidas.",
-        time: "10:30",
-      },
-      {
-        id: "msg-11",
-        author: "them",
-        text: "Vi aqui. No fim da tarde passo ai para conferir.",
-        time: "10:34",
-      },
-      {
-        id: "msg-12",
-        author: "them",
-        text: "Se estiver tudo certo, ja fecho o valor na hora.",
-        time: "10:35",
-      },
-    ],
-  },
-];
-
-function getScopeLabel(scope: ChatThread["scope"]) {
-  if (scope === "classes") {
-    return "Aulas";
-  }
-
-  if (scope === "transport") {
-    return "Transporte";
-  }
-
-  return "Produtos";
-}
-
-function getScopeIcon(scope: ChatThread["scope"]) {
+function getScopeIcon(scope: ChatScope) {
   if (scope === "classes") {
     return GraduationCap;
   }
@@ -204,7 +56,27 @@ function getScopeIcon(scope: ChatThread["scope"]) {
     return BusFront;
   }
 
+  if (scope === "services") {
+    return Wrench;
+  }
+
   return PackageSearch;
+}
+
+function getScopeLabel(scope: ChatScope) {
+  if (scope === "classes") {
+    return "Aulas";
+  }
+
+  if (scope === "transport") {
+    return "Transporte";
+  }
+
+  if (scope === "services") {
+    return "Servicos";
+  }
+
+  return "Produtos";
 }
 
 function getInitials(value: string) {
@@ -216,14 +88,35 @@ function getInitials(value: string) {
     .join("");
 }
 
-export function ChatShell() {
-  const [scope, setScope] = useState<ThreadScope>("all");
+export function ChatShell({
+  threads,
+  initialSelectedThreadId,
+  initialDraft = "",
+  isAuthenticated,
+}: Props) {
+  const [scope, setScope] = useState<"all" | ChatScope>("all");
   const [query, setQuery] = useState("");
-  const [draft, setDraft] = useState("");
-  const [selectedThreadId, setSelectedThreadId] = useState(threads[0]?.id ?? "");
+  const deferredQuery = useDeferredValue(query.trim().toLowerCase());
+  const [draft, setDraft] = useState(initialDraft);
+  const [threadState, setThreadState] = useState<ChatThread[]>(threads);
+  const [selectedThreadId, setSelectedThreadId] = useState(
+    initialSelectedThreadId ?? threads[0]?.id ?? "",
+  );
+  const [feedback, setFeedback] = useState<{
+    tone: "info" | "error";
+    text: string;
+  } | null>(null);
+  const [isSending, setIsSending] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileStage, setMobileStage] = useState<MobileStage>("list");
-  const normalizedQuery = query.trim().toLowerCase();
+
+  useEffect(() => {
+    setThreadState(threads);
+  }, [threads]);
+
+  useEffect(() => {
+    setSelectedThreadId(initialSelectedThreadId ?? threads[0]?.id ?? "");
+  }, [initialSelectedThreadId, threads]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 980px)");
@@ -250,22 +143,22 @@ export function ChatShell() {
   }, []);
 
   const filteredThreads = useMemo(() => {
-    return threads.filter((thread) => {
+    return threadState.filter((thread) => {
       const matchesScope = scope === "all" ? true : thread.scope === scope;
       const haystack = [
         thread.title,
         thread.counterpart,
+        thread.counterpartCourse,
         thread.snippet,
-        thread.status,
         thread.campus,
       ]
         .join(" ")
         .toLowerCase();
-      const matchesQuery = normalizedQuery ? haystack.includes(normalizedQuery) : true;
+      const matchesQuery = deferredQuery ? haystack.includes(deferredQuery) : true;
 
       return matchesScope && matchesQuery;
     });
-  }, [normalizedQuery, scope]);
+  }, [deferredQuery, scope, threadState]);
 
   const resolvedSelectedThreadId = filteredThreads.some(
     (thread) => thread.id === selectedThreadId,
@@ -277,9 +170,12 @@ export function ChatShell() {
     filteredThreads.find((thread) => thread.id === resolvedSelectedThreadId) ??
     filteredThreads[0] ??
     null;
+  const showListPanel = !isMobile || mobileStage === "list";
+  const showThreadPanel = !isMobile || mobileStage === "thread";
 
   function openThread(threadId: string) {
     setSelectedThreadId(threadId);
+    setFeedback(null);
 
     if (isMobile) {
       setMobileStage("thread");
@@ -290,29 +186,104 @@ export function ChatShell() {
     setMobileStage("list");
   }
 
-  const resolvedMobileStage =
-    !selectedThread && mobileStage === "thread" ? "list" : mobileStage;
-  const showListPanel = !isMobile || resolvedMobileStage === "list";
-  const showThreadPanel = !isMobile || resolvedMobileStage === "thread";
-  const totalUnread = threads.reduce((total, thread) => total + thread.unread, 0);
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!selectedThread || !draft.trim() || isSending) {
+      return;
+    }
+
+    setIsSending(true);
+    setFeedback(null);
+
+    try {
+      const response = await fetch("/api/chat/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          conversationId: selectedThread.id,
+          body: draft.trim(),
+        }),
+      });
+
+      const payload = (await response.json()) as
+        | ComposerMessage
+        | { error?: string };
+
+      if (!response.ok || !("id" in payload)) {
+        setFeedback({
+          tone: "error",
+          text:
+            "error" in payload && payload.error
+              ? payload.error
+              : "Nao deu para enviar a mensagem agora.",
+        });
+        return;
+      }
+
+      setThreadState((currentThreads) =>
+        currentThreads
+          .map((thread) => {
+            if (thread.id !== selectedThread.id) {
+              return thread;
+            }
+
+            const nextMessage: ThreadMessage = {
+              id: payload.id,
+              author: "me",
+              text: payload.text,
+              time: payload.time,
+              createdAt: payload.createdAt,
+            };
+
+            return {
+              ...thread,
+              time: payload.time,
+              snippet: payload.text,
+              messages: [...thread.messages, nextMessage],
+            };
+          })
+          .sort((left, right) => {
+            if (left.id === selectedThread.id) {
+              return -1;
+            }
+
+            if (right.id === selectedThread.id) {
+              return 1;
+            }
+
+            return 0;
+          }),
+      );
+      setDraft("");
+    } catch {
+      setFeedback({
+        tone: "error",
+        text: "Nao rolou enviar agora. Tenta de novo em instantes.",
+      });
+    } finally {
+      setIsSending(false);
+    }
+  }
+
+  const totalThreads = threadState.length;
 
   return (
     <section className={styles.shell}>
       {showListPanel ? (
-        <>
+        <div className={styles.listShell}>
           <header className={styles.topbar}>
             <div className={styles.heading}>
               <span className="eyebrow">Chat</span>
               <h1 className={styles.title}>Conversas</h1>
-              <p className={styles.lead}>Negociacoes, aulas e combinados.</p>
+              <p className={styles.lead}>
+                Produtos, servicos, aulas e combinados no mesmo lugar.
+              </p>
             </div>
 
-            <div className={styles.topMeta}>
-              <span className={styles.unreadPill}>
-                <ShieldCheck size={14} />
-                {totalUnread} nao lidas
-              </span>
-            </div>
+            <span className={styles.countPill}>{totalThreads}</span>
           </header>
 
           <div className={styles.commandBar}>
@@ -320,13 +291,13 @@ export function ChatShell() {
               <Search size={16} />
               <input
                 type="search"
-                placeholder="Buscar conversa ou pessoa"
+                placeholder="Buscar pessoa ou anuncio"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
             </label>
 
-            <div className={styles.scopeRow} aria-label="Filtrar conversas">
+            <div className={styles.scopeRow} aria-label="Filtros do chat">
               {scopeOptions.map((option) => {
                 const Icon = option.icon;
 
@@ -339,133 +310,123 @@ export function ChatShell() {
                     }`}
                     onClick={() => setScope(option.id)}
                   >
-                    <Icon size={16} />
+                    <Icon size={15} />
                     {option.label}
                   </button>
                 );
               })}
             </div>
           </div>
-        </>
+
+          <div className={styles.threadList}>
+            {filteredThreads.map((thread) => {
+              const Icon = getScopeIcon(thread.scope);
+
+              return (
+                <button
+                  key={thread.id}
+                  type="button"
+                  className={`${styles.threadCard} ${
+                    selectedThread?.id === thread.id ? styles.threadCardActive : ""
+                  }`}
+                  onClick={() => openThread(thread.id)}
+                >
+                  <div className={styles.threadAvatar}>{getInitials(thread.counterpart)}</div>
+
+                  <div className={styles.threadContent}>
+                    <div className={styles.threadTopline}>
+                      <strong>{thread.counterpart}</strong>
+                      <span>{thread.time}</span>
+                    </div>
+
+                    <div className={styles.threadContext}>
+                      <Icon size={13} />
+                      <span>{thread.title}</span>
+                    </div>
+
+                    <p>{thread.snippet}</p>
+                  </div>
+                </button>
+              );
+            })}
+
+            {!filteredThreads.length ? (
+              <div className={styles.emptyState}>
+                <strong>
+                  {isAuthenticated ? "Nenhuma conversa por aqui." : "Entra na tua conta para abrir conversas."}
+                </strong>
+                <p>
+                  {isAuthenticated
+                    ? "Quando tu chamar alguem por um anuncio, a conversa aparece aqui."
+                    : "O chat nasce quando tu entra em um anuncio e inicia contato."}
+                </p>
+                <div className={styles.emptyActions}>
+                  <Link href={isAuthenticated ? "/feed" : "/entrar"} className={styles.primaryLink}>
+                    {isAuthenticated ? "Abrir feed" : "Entrar"}
+                  </Link>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
       ) : null}
 
-      <div className={styles.layout}>
-        {showListPanel ? (
-          <section className={styles.threadPanel}>
-            <div className={styles.sectionHeader}>
-              <strong>{filteredThreads.length} conversas</strong>
-              <span>{scope === "all" ? "Recentes" : "Filtro ativo"}</span>
-            </div>
+      {showThreadPanel ? (
+        <aside className={styles.threadShell}>
+          {selectedThread ? (
+            <>
+              <div className={styles.chatHeader}>
+                <div className={styles.chatHeaderMain}>
+                  {isMobile ? (
+                    <button
+                      type="button"
+                      className={styles.iconButton}
+                      onClick={closeThread}
+                      aria-label="Voltar para conversas"
+                    >
+                      <ArrowLeft size={18} />
+                    </button>
+                  ) : null}
 
-            <div className={styles.threadList}>
-              {filteredThreads.map((thread) => {
-                const Icon = getScopeIcon(thread.scope);
-
-                return (
-                  <button
-                    key={thread.id}
-                    type="button"
-                    className={`${styles.threadCard} ${
-                      selectedThread?.id === thread.id ? styles.threadCardActive : ""
-                    }`}
-                    onClick={() => openThread(thread.id)}
-                  >
-                    <div className={styles.threadAvatar}>{getInitials(thread.counterpart)}</div>
-
-                    <div className={styles.threadContent}>
-                      <div className={styles.threadTopline}>
-                        <strong>{thread.counterpart}</strong>
-                        <span>{thread.time}</span>
-                      </div>
-
-                      <div className={styles.threadMeta}>
-                        <span className={styles.threadContext}>
-                          <Icon size={14} />
-                          {thread.title}
-                        </span>
-                        <span>{thread.status}</span>
-                      </div>
-
-                      <p>{thread.snippet}</p>
-                    </div>
-
-                    {thread.unread ? (
-                      <span className={styles.unreadBadge}>{thread.unread}</span>
-                    ) : null}
-                  </button>
-                );
-              })}
-
-              {!filteredThreads.length ? (
-                <div className={styles.emptyState}>
-                  <strong>Nada por aqui.</strong>
-                  <p>Tenta outro filtro.</p>
-                </div>
-              ) : null}
-            </div>
-          </section>
-        ) : null}
-
-        {showThreadPanel ? (
-          <aside className={styles.previewPanel}>
-            {selectedThread ? (
-              <>
-                <div className={styles.chatHeader}>
-                  <div className={styles.chatHeaderMain}>
-                    {isMobile ? (
-                      <button
-                        type="button"
-                        className={styles.iconButton}
-                        onClick={closeThread}
-                        aria-label="Voltar para conversas"
-                      >
-                        <ArrowLeft size={18} />
-                      </button>
-                    ) : null}
-
-                    <div className={styles.threadAvatarLarge}>
-                      {getInitials(selectedThread.counterpart)}
-                    </div>
-
-                    <div className={styles.chatHeaderCopy}>
-                      <strong>{selectedThread.counterpart}</strong>
-                      <span>{selectedThread.status}</span>
-                    </div>
+                  <div className={styles.threadAvatarLarge}>
+                    {getInitials(selectedThread.counterpart)}
                   </div>
 
-                  <button
-                    type="button"
-                    className={styles.iconButton}
-                    aria-label="Mais opcoes"
-                  >
-                    <MoreVertical size={18} />
-                  </button>
+                  <div className={styles.chatHeaderCopy}>
+                    <strong>{selectedThread.counterpart}</strong>
+                    <span>{selectedThread.counterpartCourse ?? "Perfil CAMPUS"}</span>
+                  </div>
                 </div>
 
-                <div className={styles.chatInfoRow}>
-                  <span className={styles.infoChip}>{selectedThread.title}</span>
-                  <span className={styles.infoChip}>
-                    <MapPin size={14} />
-                    {selectedThread.campus}
-                  </span>
-                  <span className={styles.infoChip}>
-                    <ShieldCheck size={14} />
-                    {getScopeLabel(selectedThread.scope)}
-                  </span>
-                </div>
+                {selectedThread.counterpartHref ? (
+                  <Link href={selectedThread.counterpartHref} className={styles.headerLink}>
+                    <UserRound size={16} />
+                    Perfil
+                  </Link>
+                ) : null}
+              </div>
 
-                <div className={styles.quickActionRow}>
-                  {selectedThread.actions.map((action) => (
-                    <button key={action} type="button" className={styles.quickAction}>
-                      {action}
-                    </button>
-                  ))}
-                </div>
+              <div className={styles.contextRow}>
+                <span className={styles.contextChip}>
+                  <Sparkles size={14} />
+                  {getScopeLabel(selectedThread.scope)}
+                </span>
+                <span className={styles.contextChip}>
+                  <MapPin size={14} />
+                  {selectedThread.campus}
+                </span>
+                {selectedThread.listingHref ? (
+                  <Link href={selectedThread.listingHref} className={styles.contextLink}>
+                    {selectedThread.title}
+                  </Link>
+                ) : (
+                  <span className={styles.contextChip}>{selectedThread.title}</span>
+                )}
+              </div>
 
-                <div className={styles.messageViewport}>
-                  <div className={styles.dayMarker}>Hoje</div>
-
-                  {selectedThread.messages.map((message) => (
+              <div className={styles.messageViewport}>
+                {selectedThread.messages.length ? (
+                  selectedThread.messages.map((message) => (
                     <article
                       key={message.id}
                       className={`${styles.messageBubble} ${
@@ -475,52 +436,49 @@ export function ChatShell() {
                       <p>{message.text}</p>
                       <span>{message.time}</span>
                     </article>
-                  ))}
-                </div>
-
-                <form
-                  className={styles.composerBar}
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    setDraft("");
-                  }}
-                >
-                  <button
-                    type="button"
-                    className={styles.composerIcon}
-                    aria-label="Mais acoes"
-                  >
-                    <Plus size={18} />
-                  </button>
-
-                  <label className={styles.composerField}>
-                    <input
-                      type="text"
-                      placeholder="Escreve uma mensagem"
-                      value={draft}
-                      onChange={(event) => setDraft(event.target.value)}
-                    />
-                  </label>
-
-                  <button
-                    type="submit"
-                    className={styles.sendButton}
-                    disabled={!draft.trim()}
-                    aria-label="Enviar mensagem"
-                  >
-                    <Send size={18} />
-                  </button>
-                </form>
-              </>
-            ) : (
-              <div className={styles.emptyState}>
-                <strong>Nenhuma conversa selecionada.</strong>
-                <p>Abre uma conversa da lista.</p>
+                  ))
+                ) : (
+                  <div className={styles.emptyState}>
+                    <strong>Conversa aberta.</strong>
+                    <p>Essa janela ja esta pronta para combinar detalhes sem sair do app.</p>
+                  </div>
+                )}
               </div>
-            )}
-          </aside>
-        ) : null}
-      </div>
+
+              {feedback ? (
+                <div className="status-banner" data-tone={feedback.tone}>
+                  {feedback.text}
+                </div>
+              ) : null}
+
+              <form className={styles.composerBar} onSubmit={handleSubmit}>
+                <label className={styles.composerField}>
+                  <input
+                    type="text"
+                    placeholder="Escreve uma mensagem"
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                  />
+                </label>
+
+                <button
+                  type="submit"
+                  className={styles.sendButton}
+                  disabled={!draft.trim() || isSending}
+                  aria-label="Enviar mensagem"
+                >
+                  <Send size={18} />
+                </button>
+              </form>
+            </>
+          ) : (
+            <div className={styles.emptyStage}>
+              <strong>Abre uma conversa.</strong>
+              <p>O detalhe entra aqui quando tu escolher um contato ou um anuncio.</p>
+            </div>
+          )}
+        </aside>
+      ) : null}
     </section>
   );
 }

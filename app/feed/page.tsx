@@ -23,7 +23,7 @@ type FeedPageProps = {
 
 export const metadata: Metadata = {
   title: "Feed",
-  description: "Produtos, servicos e demandas no CAMPUS.",
+  description: "Oportunidades reais entre estudantes no CAMPUS.",
 };
 
 function readSingleValue(value?: string | string[]) {

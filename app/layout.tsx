@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Sora } from "next/font/google";
+import { Inter, Sora } from "next/font/google";
 
 import { InstallProvider } from "@/components/engagement/install-provider";
 import { getSiteUrl } from "@/lib/site-url";
 
 import "./globals.css";
 
-const bodyFont = Plus_Jakarta_Sans({
-  subsets: ["latin-ext"],
+const bodyFont = Inter({
+  subsets: ["latin"],
   display: "swap",
   fallback: ["system-ui", "sans-serif"],
   variable: "--font-body",
@@ -29,15 +29,16 @@ export const metadata: Metadata = {
     template: "%s | CAMPUS",
   },
   description:
-    "Marketplace universitário para produtos, moradia, aulas, transporte e demandas da vida no campus.",
+    "Rede universitaria de oportunidades para renda, troca, autonomia e vida pratica no campus.",
   applicationName: "CAMPUS",
   keywords: [
-    "marketplace universitário",
+    "rede universitaria",
     "UFRB",
-    "serviços estudantis",
-    "produtos universitários",
+    "oportunidades estudantis",
+    "servicos entre estudantes",
+    "renda extra universitaria",
     "campus",
-    "achados universitários",
+    "vida universitaria",
   ],
   category: "education",
   alternates: {
@@ -50,13 +51,13 @@ export const metadata: Metadata = {
     siteName: "CAMPUS",
     title: "CAMPUS",
     description:
-      "Produtos, moradia, aulas, transporte e demandas com leitura rápida e cara de marketplace universitário.",
+      "Uma rede universitaria para ensinar, vender, prestar servicos, dividir moradia e resolver a vida no campus.",
   },
   twitter: {
     card: "summary_large_image",
     title: "CAMPUS",
     description:
-      "Compra, vende, anuncia e pede no mesmo feed, com visual mais limpo e leitura rápida.",
+      "Renda, troca, estudo e autonomia no mesmo ecossistema universitario.",
   },
   appleWebApp: {
     capable: true,
@@ -70,8 +71,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#6d4aff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0d1020" },
+    { media: "(prefers-color-scheme: light)", color: "#fff1f5" },
+    { media: "(prefers-color-scheme: dark)", color: "#0d1117" },
   ],
   colorScheme: "dark light",
 };
@@ -84,7 +85,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      data-theme="dark"
+      data-theme="light"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
       className={`${bodyFont.variable} ${displayFont.variable}`}

@@ -235,7 +235,7 @@ export function AuthPanel({
 
           <div className={styles.actionRow}>
             <Link href="/perfil" className={styles.primaryAction}>
-              Ver perfil
+              Minha conta
             </Link>
             <Link href="/perfil/editar" className={styles.secondaryAction}>
               Editar perfil

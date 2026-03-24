@@ -93,16 +93,6 @@ export type StudyGroup = {
   perStudent: number;
 };
 
-export type GeneralServiceRequest = {
-  id: string;
-  title: string;
-  category: string;
-  place: string;
-  budget: number;
-  urgency: string;
-  note: string;
-};
-
 export const workTabs: WorkTab[] = [
   {
     id: "transporte",
@@ -360,36 +350,6 @@ export const studyGroups: StudyGroup[] = [
     location: "Online",
     timing: "Sab - 14:00",
     perStudent: 18,
-  },
-];
-
-export const generalServiceRequests: GeneralServiceRequest[] = [
-  {
-    id: "srv-tela",
-    title: "Instalar tela de protecao em duas janelas",
-    category: "Pequenos reparos",
-    place: "Republica perto do campus",
-    budget: 140,
-    urgency: "Essa semana",
-    note: "Ja tenho as telas, preciso da instalacao e acabamento.",
-  },
-  {
-    id: "srv-faxina",
-    title: "Faxina pesada depois da mudanca",
-    category: "Faxina",
-    place: "Apartamento estudantil",
-    budget: 95,
-    urgency: "Fim de semana",
-    note: "Cozinha, banheiro e organizacao geral.",
-  },
-  {
-    id: "srv-montagem",
-    title: "Montar guarda-roupa e bancada de estudos",
-    category: "Montagem",
-    place: "Quarto em republica",
-    budget: 120,
-    urgency: "Hoje a noite",
-    note: "Movel simples com manual e parafusos completos.",
   },
 ];
 

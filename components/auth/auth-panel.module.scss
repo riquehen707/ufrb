@@ -82,27 +82,17 @@
 .primaryAction,
 .secondaryAction,
 .signOutButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
   min-height: 2.9rem;
-  padding: 0.68rem 0.92rem;
-  border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--line));
-  border-radius: 0.84rem;
-  background: color-mix(in srgb, var(--accent) 10%, var(--surface-elevated));
-  color: var(--text);
-  font-weight: 700;
-  @include pressable(
-    $hover-translate: -1px,
-    $hover-border: color-mix(in srgb, var(--accent) 22%, var(--line))
-  );
+  padding-inline: var(--space-4);
+}
+
+.primaryAction {
+  @include button-primary($padding-y: 10px, $padding-x: var(--space-4), $radius: var(--radius-button));
 }
 
 .secondaryAction,
 .signOutButton {
-  border-color: color-mix(in srgb, var(--text) 6%, var(--line));
-  background: color-mix(in srgb, var(--surface-elevated) 74%, transparent);
+  @include button-secondary($padding-y: 10px, $padding-x: var(--space-4), $radius: var(--radius-button));
 }
 
 .sessionCard {

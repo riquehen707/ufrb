@@ -160,13 +160,17 @@
   }
 
   &:focus-within {
-    border-color: color-mix(in srgb, var(--accent) 18%, var(--line));
-    box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--accent) 8%, transparent);
+    border-color: var(--action-primary);
+    box-shadow: 0 0 0 4px var(--focus-ring);
   }
 }
 
 .searchInput {
   min-height: 3rem;
+
+  &::placeholder {
+    color: var(--text-tertiary);
+  }
 }
 
 .sortCard,

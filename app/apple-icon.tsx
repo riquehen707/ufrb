@@ -19,7 +19,7 @@ export default function AppleIcon() {
           justifyContent: "center",
           position: "relative",
           background:
-            "linear-gradient(145deg, rgb(5, 8, 22), rgb(18, 25, 20))",
+            "linear-gradient(145deg, rgb(13, 17, 23), rgb(31, 39, 50))",
           color: "white",
           fontSize: 82,
           fontWeight: 800,
@@ -35,7 +35,7 @@ export default function AppleIcon() {
             height: 124,
             borderRadius: 34,
             background:
-              "linear-gradient(145deg, rgb(24, 195, 123), rgb(13, 140, 87))",
+              "linear-gradient(145deg, rgb(255, 45, 111), rgb(199, 15, 77))",
           }}
         >
           C
@@ -48,7 +48,7 @@ export default function AppleIcon() {
             width: 16,
             height: 16,
             borderRadius: 999,
-            background: "rgb(122, 92, 255)",
+            background: "rgb(255, 193, 214)",
           }}
         />
       </div>

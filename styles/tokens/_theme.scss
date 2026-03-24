@@ -1,0 +1,30 @@
+@use "./colors" as *;
+
+$bg-page: $color-neutral-50;
+$bg-surface: $color-neutral-0;
+$bg-surface-muted: $color-neutral-100;
+$bg-inverse: $color-onyx;
+
+$text-primary: $color-neutral-900;
+$text-secondary: $color-neutral-600;
+$text-tertiary: $color-neutral-400;
+$text-inverse: $color-neutral-0;
+
+$border-subtle: $color-neutral-100;
+$border-default: $color-neutral-200;
+$border-strong: $color-neutral-300;
+
+$action-primary: $color-primary-500;
+$action-primary-hover: $color-primary-600;
+$action-primary-pressed: $color-primary-700;
+
+$action-secondary: $color-neutral-900;
+$action-secondary-hover: $color-neutral-800;
+$action-secondary-pressed: #090c10;
+
+$focus-ring: rgba(255, 45, 111, 0.28);
+
+$success-default: $color-success-500;
+$warning-default: $color-warning-500;
+$error-default: $color-error-500;
+$info-default: $color-info-500;

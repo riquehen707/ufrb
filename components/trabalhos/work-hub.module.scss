@@ -145,13 +145,6 @@
     color: var(--text);
   }
 
-  :global(.work-demand-card:active),
-  :global(.work-profile-card:active),
-  :global(.work-card:active),
-  :global(.work-metric-card:active) {
-    transform: scale(0.985);
-  }
-
   :global(.work-card-header) {
     gap: 0.6rem;
   }
@@ -218,20 +211,12 @@
 
   :global(.primary-button),
   :global(.secondary-button),
-  :global(.ghost-button),
-  :global(.type-pill) {
+  :global(.ghost-button) {
     border-radius: 0.82rem;
     @include pressable(
       $hover-translate: -1px,
       $hover-border: color-mix(in srgb, var(--accent) 16%, var(--line))
     );
-  }
-
-  :global(.primary-button:active),
-  :global(.secondary-button:active),
-  :global(.ghost-button:active),
-  :global(.type-pill:active) {
-    transform: scale(0.985);
   }
 
   :global(.media-action-row),

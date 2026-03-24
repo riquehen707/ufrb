@@ -215,6 +215,86 @@ create table if not exists public.marketplace_orders (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.marketplace_conversations (
+  id uuid primary key default gen_random_uuid(),
+  listing_id uuid references public.listings(id) on delete set null,
+  participant_a_id uuid not null references public.profiles(id) on delete cascade,
+  participant_b_id uuid not null references public.profiles(id) on delete cascade,
+  created_by uuid not null references public.profiles(id) on delete cascade,
+  scope text not null default 'products' check (scope in ('products', 'classes', 'transport', 'services')),
+  last_message_preview text,
+  last_message_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint marketplace_conversations_participants_check check (participant_a_id <> participant_b_id),
+  unique (listing_id, participant_a_id, participant_b_id)
+);
+
+alter table public.marketplace_conversations
+  add column if not exists listing_id uuid references public.listings(id) on delete set null,
+  add column if not exists participant_a_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists participant_b_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists created_by uuid references public.profiles(id) on delete cascade,
+  add column if not exists scope text not null default 'products',
+  add column if not exists last_message_preview text,
+  add column if not exists last_message_at timestamptz,
+  add column if not exists updated_at timestamptz not null default now();
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'marketplace_conversations_scope_check'
+  ) then
+    alter table public.marketplace_conversations
+      drop constraint marketplace_conversations_scope_check;
+  end if;
+
+  alter table public.marketplace_conversations
+    add constraint marketplace_conversations_scope_check
+    check (scope in ('products', 'classes', 'transport', 'services'));
+exception
+  when duplicate_object then
+    null;
+end;
+$$;
+
+create table if not exists public.marketplace_messages (
+  id uuid primary key default gen_random_uuid(),
+  conversation_id uuid not null references public.marketplace_conversations(id) on delete cascade,
+  sender_id uuid not null references public.profiles(id) on delete cascade,
+  body text not null check (length(trim(body)) > 0),
+  read_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+alter table public.marketplace_messages
+  add column if not exists conversation_id uuid references public.marketplace_conversations(id) on delete cascade,
+  add column if not exists sender_id uuid references public.profiles(id) on delete cascade,
+  add column if not exists body text,
+  add column if not exists read_at timestamptz;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'marketplace_messages_body_check'
+  ) then
+    alter table public.marketplace_messages
+      drop constraint marketplace_messages_body_check;
+  end if;
+
+  alter table public.marketplace_messages
+    add constraint marketplace_messages_body_check
+    check (length(trim(body)) > 0);
+exception
+  when duplicate_object then
+    null;
+end;
+$$;
+
 alter table public.marketplace_orders
   add column if not exists listing_id uuid references public.listings(id) on delete set null,
   add column if not exists buyer_profile_id uuid references public.profiles(id) on delete cascade,
@@ -411,6 +491,54 @@ begin
 end;
 $$;
 
+create or replace function public.refresh_marketplace_conversation_summary(target_conversation uuid)
+returns void
+language plpgsql
+as $$
+begin
+  update public.marketplace_conversations
+  set
+    last_message_preview = (
+      select body
+      from public.marketplace_messages
+      where conversation_id = target_conversation
+      order by created_at desc
+      limit 1
+    ),
+    last_message_at = (
+      select created_at
+      from public.marketplace_messages
+      where conversation_id = target_conversation
+      order by created_at desc
+      limit 1
+    ),
+    updated_at = coalesce(
+      (
+        select created_at
+        from public.marketplace_messages
+        where conversation_id = target_conversation
+        order by created_at desc
+        limit 1
+      ),
+      now()
+    )
+  where id = target_conversation;
+end;
+$$;
+
+create or replace function public.sync_marketplace_conversation_summary()
+returns trigger
+language plpgsql
+as $$
+declare
+  target_conversation uuid;
+begin
+  target_conversation := coalesce(new.conversation_id, old.conversation_id);
+  perform public.refresh_marketplace_conversation_summary(target_conversation);
+  return coalesce(new, old);
+end;
+$$;
+
 create index if not exists listings_feed_idx
 on public.listings (status, featured desc, created_at desc);
 
@@ -434,6 +562,15 @@ on public.marketplace_orders (buyer_profile_id, seller_profile_id, created_at de
 
 create index if not exists marketplace_orders_status_idx
 on public.marketplace_orders (status, completed_at desc);
+
+create index if not exists marketplace_conversations_participants_idx
+on public.marketplace_conversations (participant_a_id, participant_b_id, updated_at desc);
+
+create index if not exists marketplace_conversations_listing_idx
+on public.marketplace_conversations (listing_id, updated_at desc);
+
+create index if not exists marketplace_messages_conversation_idx
+on public.marketplace_messages (conversation_id, created_at desc);
 
 create index if not exists marketplace_reviews_reviewed_idx
 on public.marketplace_reviews (reviewed_profile_id, created_at desc);
@@ -471,11 +608,23 @@ before update on public.marketplace_orders
 for each row
 execute procedure public.set_current_timestamp_updated_at();
 
+drop trigger if exists handle_marketplace_conversations_updated_at on public.marketplace_conversations;
+create trigger handle_marketplace_conversations_updated_at
+before update on public.marketplace_conversations
+for each row
+execute procedure public.set_current_timestamp_updated_at();
+
 drop trigger if exists handle_donations_support_sync on public.donations;
 create trigger handle_donations_support_sync
 after insert or update or delete on public.donations
 for each row
 execute procedure public.sync_profile_support_summary();
+
+drop trigger if exists handle_marketplace_messages_sync on public.marketplace_messages;
+create trigger handle_marketplace_messages_sync
+after insert or update or delete on public.marketplace_messages
+for each row
+execute procedure public.sync_marketplace_conversation_summary();
 
 drop trigger if exists handle_marketplace_reviews_sync on public.marketplace_reviews;
 create trigger handle_marketplace_reviews_sync
@@ -535,6 +684,8 @@ alter table public.profiles enable row level security;
 alter table public.listings enable row level security;
 alter table public.donations enable row level security;
 alter table public.marketplace_orders enable row level security;
+alter table public.marketplace_conversations enable row level security;
+alter table public.marketplace_messages enable row level security;
 alter table public.marketplace_reviews enable row level security;
 alter table public.housing_reviews enable row level security;
 
@@ -617,6 +768,73 @@ using (
 with check (
   buyer_profile_id = (select auth.uid())
   or seller_profile_id = (select auth.uid())
+);
+
+drop policy if exists "marketplace_conversations_participants_read" on public.marketplace_conversations;
+create policy "marketplace_conversations_participants_read"
+on public.marketplace_conversations
+for select
+using (
+  participant_a_id = (select auth.uid())
+  or participant_b_id = (select auth.uid())
+);
+
+drop policy if exists "marketplace_conversations_participants_insert" on public.marketplace_conversations;
+create policy "marketplace_conversations_participants_insert"
+on public.marketplace_conversations
+for insert
+with check (
+  created_by = (select auth.uid())
+  and (
+    participant_a_id = (select auth.uid())
+    or participant_b_id = (select auth.uid())
+  )
+);
+
+drop policy if exists "marketplace_conversations_participants_update" on public.marketplace_conversations;
+create policy "marketplace_conversations_participants_update"
+on public.marketplace_conversations
+for update
+using (
+  participant_a_id = (select auth.uid())
+  or participant_b_id = (select auth.uid())
+)
+with check (
+  participant_a_id = (select auth.uid())
+  or participant_b_id = (select auth.uid())
+);
+
+drop policy if exists "marketplace_messages_participants_read" on public.marketplace_messages;
+create policy "marketplace_messages_participants_read"
+on public.marketplace_messages
+for select
+using (
+  exists (
+    select 1
+    from public.marketplace_conversations
+    where marketplace_conversations.id = marketplace_messages.conversation_id
+      and (
+        marketplace_conversations.participant_a_id = (select auth.uid())
+        or marketplace_conversations.participant_b_id = (select auth.uid())
+      )
+  )
+);
+
+drop policy if exists "marketplace_messages_participants_insert" on public.marketplace_messages;
+create policy "marketplace_messages_participants_insert"
+on public.marketplace_messages
+for insert
+with check (
+  sender_id = (select auth.uid())
+  and exists (
+    select 1
+    from public.marketplace_conversations
+    where marketplace_conversations.id = marketplace_messages.conversation_id
+      and (
+        marketplace_conversations.participant_a_id = (select auth.uid())
+        or marketplace_conversations.participant_b_id = (select auth.uid())
+      )
+  )
 );
 
 drop policy if exists "marketplace_reviews_public_read" on public.marketplace_reviews;

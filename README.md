@@ -59,7 +59,7 @@ npm run dev
    - `PICPAY_CLIENT_SECRET`
    - `PICPAY_WEBHOOK_TOKEN`
 
-Observacao: o feed tenta ler a tabela `listings`. Se ela estiver vazia, a interface exibe dados de demonstracao.
+Observacao: o feed so exibe anuncios reais da tabela `listings`. Se ela estiver vazia, a interface mostra o estado vazio do catalogo.
 
 ## Doacoes confirmadas
 

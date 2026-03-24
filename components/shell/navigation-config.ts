@@ -112,20 +112,20 @@ function getHomeContext(): NavigationContext {
     actions: [
       {
         href: buildAnnounceHref({ intent: "offer" }),
-        label: "Publicar oferta",
-        description: "Produto ou servico.",
+        label: "Publicar produto",
+        description: "Livro, item ou vaga.",
         icon: SquarePen,
       },
       {
         href: buildAnnounceHref({ intent: "request" }),
-        label: "Criar demanda",
-        description: "Fazer um pedido.",
+        label: "Encontrar ajuda",
+        description: "Abrir um pedido.",
         icon: HandCoins,
       },
       {
         href: "/trabalhos",
-        label: "Abrir trabalhos",
-        description: "Aulas e transporte.",
+        label: "Dar aula ou ajudar",
+        description: "Aulas, servicos e rotas.",
         icon: BriefcaseBusiness,
       },
     ],
@@ -173,8 +173,8 @@ function getFeedContext(searchParams: SearchParamReader): NavigationContext {
     actions: [
       {
         href: buildAnnounceHref({ intent: "request" }),
-        label: "Nova demanda",
-        description: "Pedir algo.",
+        label: "Encontrar ajuda",
+        description: "Abrir um pedido.",
         icon: HandCoins,
       },
       {
@@ -185,8 +185,8 @@ function getFeedContext(searchParams: SearchParamReader): NavigationContext {
       },
       {
         href: "/trabalhos",
-        label: "Abrir trabalhos",
-        description: "Aulas e transporte.",
+        label: "Dar aula ou ajudar",
+        description: "Aulas, servicos e rotas.",
         icon: BriefcaseBusiness,
       },
     ],
@@ -496,8 +496,8 @@ function getListingContext(pathname: string): NavigationContext {
     actions: [
       {
         href: listingChatHref,
-        label: "Abrir conversa",
-        description: "Ir para o chat.",
+        label: "Falar com estudante",
+        description: "Continuar essa conversa.",
         icon: MessageSquareText,
       },
       {
@@ -508,8 +508,8 @@ function getListingContext(pathname: string): NavigationContext {
       },
       {
         href: "/perfil",
-        label: "Ver perfil",
-        description: "Abrir perfil.",
+        label: "Minha conta",
+        description: "Ir para tua conta.",
         icon: CircleUserRound,
       },
     ],
@@ -540,8 +540,8 @@ function getChatContext(searchParams: SearchParamReader): NavigationContext {
         },
         {
           href: "/perfil",
-          label: "Abrir perfil",
-          description: "Abrir perfil.",
+          label: "Minha conta",
+          description: "Ir para tua conta.",
           icon: CircleUserRound,
         },
       ],
@@ -568,8 +568,8 @@ function getChatContext(searchParams: SearchParamReader): NavigationContext {
       },
       {
         href: "/perfil",
-        label: "Ver perfil",
-        description: "Abrir perfil.",
+        label: "Minha conta",
+        description: "Ir para tua conta.",
         icon: CircleUserRound,
       },
     ],
@@ -598,7 +598,7 @@ function getProfileContext(pathname: string): NavigationContext {
         },
         {
           href: "/chat",
-          label: "Abrir chat",
+          label: "Conversas",
           description: "Ir para conversas.",
           icon: MessageSquareText,
         },
@@ -614,11 +614,11 @@ function getProfileContext(pathname: string): NavigationContext {
       icon: CircleUserRound,
       actions: [
         {
-          href: "/chat",
-          label: "Abrir chat",
-          description: "Conversar com esse perfil.",
-          icon: MessageSquareText,
-        },
+        href: "/chat",
+        label: "Falar com estudante",
+        description: "Abrir a conversa desse perfil.",
+        icon: MessageSquareText,
+      },
         {
           href: "/feed",
           label: "Voltar ao feed",
@@ -655,8 +655,8 @@ function getProfileContext(pathname: string): NavigationContext {
       },
       {
         href: "/chat",
-        label: "Abrir chat",
-        description: "Ir para o chat.",
+        label: "Falar com estudante",
+        description: "Ir para conversas.",
         icon: MessageSquareText,
       },
     ],
@@ -678,13 +678,13 @@ function getDonationContext(): NavigationContext {
       },
       {
         href: "/perfil",
-        label: "Abrir perfil",
-        description: "Abrir perfil.",
+        label: "Minha conta",
+        description: "Ir para tua conta.",
         icon: CircleUserRound,
       },
       {
         href: buildAnnounceHref({ intent: "offer" }),
-        label: "Publicar oferta",
+        label: "Publicar produto",
         description: "Criar anuncio.",
         icon: SquarePen,
       },

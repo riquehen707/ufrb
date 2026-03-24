@@ -6,7 +6,7 @@ export function SiteFooter() {
       <div className="container footer-inner">
         <div className="footer-copy">
           <strong>CAMPUS</strong>
-          <p>Trocas, renda extra e estudos entre estudantes.</p>
+          <p>Rede universitaria para renda, troca, estudo e autonomia real.</p>
         </div>
 
         <div className="footer-signals" aria-label="Acoes do rodape">

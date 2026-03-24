@@ -23,7 +23,7 @@ export function InstallPrompt() {
         <Download size={16} />
         App
       </span>
-      <h3>Levar pro celular</h3>
+      <h3>Levar tua rede pro celular</h3>
       <p>{browserLabel}</p>
 
       <div className="install-status">

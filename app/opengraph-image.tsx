@@ -19,19 +19,19 @@ export default function OpenGraphImage() {
           justifyContent: "space-between",
           padding: "72px",
           background:
-            "linear-gradient(135deg, rgb(255, 248, 241), rgb(237, 245, 242))",
-          color: "rgb(16, 34, 33)",
+            "linear-gradient(135deg, rgb(255, 255, 255), rgb(248, 250, 252))",
+          color: "rgb(17, 22, 29)",
         }}
       >
         <div
           style={{
             display: "flex",
             alignItems: "center",
-          gap: 18,
-          fontSize: 36,
-          fontWeight: 700,
-        }}
-      >
+            gap: 18,
+            fontSize: 36,
+            fontWeight: 700,
+          }}
+        >
           <div
             style={{
               width: 88,
@@ -41,7 +41,7 @@ export default function OpenGraphImage() {
               justifyContent: "center",
               borderRadius: 28,
               background:
-                "linear-gradient(145deg, rgb(24, 195, 123), rgb(13, 140, 87))",
+                "linear-gradient(145deg, rgb(255, 45, 111), rgb(199, 15, 77))",
               color: "white",
               fontSize: 42,
               fontWeight: 800,
@@ -68,7 +68,7 @@ export default function OpenGraphImage() {
               maxWidth: "880px",
             }}
           >
-            O marketplace universitário com mais presença e menos cara de improviso.
+            A rede universitaria para renda, troca e autonomia real.
           </div>
           <div
             style={{
@@ -76,13 +76,13 @@ export default function OpenGraphImage() {
               gap: 16,
               flexWrap: "wrap",
               fontSize: 28,
-              color: "rgb(88, 112, 108)",
+              color: "rgb(107, 119, 136)",
             }}
           >
-            <span>Achados</span>
-            <span>Serviços</span>
-            <span>Freelas</span>
-            <span>No celular fica melhor</span>
+            <span>Aulas</span>
+            <span>Servicos</span>
+            <span>Moradia</span>
+            <span>Oportunidades reais</span>
           </div>
         </div>
       </div>

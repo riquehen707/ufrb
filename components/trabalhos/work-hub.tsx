@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Clock3, Route, ShieldCheck } from "lucide-react";
 
@@ -9,10 +9,12 @@ import { GeneralServicesWorkspace } from "@/components/trabalhos/general-service
 import { TransportWorkspace } from "@/components/trabalhos/transport-workspace";
 import { WorkTabNav } from "@/components/trabalhos/work-tab-nav";
 import styles from "@/components/trabalhos/work-hub.module.scss";
+import type { Listing } from "@/lib/listings";
 import { getWorkTab, type WorkTabId, workTabs } from "@/lib/work-hub";
 
 type Props = {
   initialTab: WorkTabId;
+  serviceListings: Listing[];
 };
 
 const tabHighlights: Record<
@@ -36,10 +38,39 @@ const tabHighlights: Record<
   ],
 };
 
-export function WorkHub({ initialTab }: Props) {
+export function WorkHub({ initialTab, serviceListings }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<WorkTabId>(initialTab);
   const activeConfig = getWorkTab(activeTab);
+  const resolvedHighlights = useMemo(() => {
+    if (activeTab !== "servicos") {
+      return tabHighlights[activeTab];
+    }
+
+    const offers = serviceListings.filter((listing) => listing.intent === "offer").length;
+    const requests = serviceListings.filter((listing) => listing.intent === "request").length;
+    const scopes = new Set(
+      serviceListings.map((listing) => listing.focus).filter(Boolean),
+    ).size;
+
+    return [
+      {
+        label: "Prestadores",
+        value: offers ? `${offers} ativos` : "sem oferta",
+        icon: Clock3,
+      },
+      {
+        label: "Demandas",
+        value: requests ? `${requests} abertas` : "sem demanda",
+        icon: Route,
+      },
+      {
+        label: "Escopos",
+        value: scopes ? `${scopes} recortes` : "sem recorte",
+        icon: ShieldCheck,
+      },
+    ];
+  }, [activeTab, serviceListings]);
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -64,7 +95,7 @@ export function WorkHub({ initialTab }: Props) {
         </div>
 
         <div className={styles.summaryGrid}>
-          {tabHighlights[activeTab].map(({ label, value, icon: Icon }) => (
+          {resolvedHighlights.map(({ label, value, icon: Icon }) => (
             <article key={label} className={styles.summaryCard}>
               <Icon size={16} />
               <strong>{label}</strong>
@@ -82,7 +113,9 @@ export function WorkHub({ initialTab }: Props) {
         <div className={styles.workspaceFrame}>
           {activeTab === "transporte" ? <TransportWorkspace /> : null}
           {activeTab === "aulas" ? <ClassesWorkspace /> : null}
-          {activeTab === "servicos" ? <GeneralServicesWorkspace /> : null}
+          {activeTab === "servicos" ? (
+            <GeneralServicesWorkspace listings={serviceListings} />
+          ) : null}
         </div>
       </div>
     </section>

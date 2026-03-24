@@ -149,12 +149,32 @@
 
 .textarea {
   min-height: 6.8rem;
-  padding: 0.88rem 0.94rem;
-  border: 1px solid color-mix(in srgb, var(--text) 7%, var(--line));
-  border-radius: 0.88rem;
-  background: color-mix(in srgb, var(--surface) 96%, transparent);
-  color: var(--text);
+  padding: 12px 14px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-input);
+  background: var(--bg-surface);
+  color: var(--text-primary);
   resize: vertical;
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-normal);
+  transition:
+    border-color 160ms var(--motion-easing-standard),
+    box-shadow 160ms var(--motion-easing-standard),
+    background-color 160ms var(--motion-easing-standard);
+
+  &::placeholder {
+    color: var(--text-tertiary);
+  }
+
+  &:hover {
+    border-color: var(--border-strong);
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--action-primary);
+    box-shadow: 0 0 0 4px var(--focus-ring);
+  }
 }
 
 .emptyCard {

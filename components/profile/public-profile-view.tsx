@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MessageSquareText, ShieldCheck, Store } from "lucide-react";
+import { ShieldCheck, Store } from "lucide-react";
 
 import styles from "@/components/profile/profile-shell.module.scss";
 import { MarketplaceListingCard } from "@/components/marketplace/marketplace-listing-card";
@@ -34,6 +34,7 @@ function getInstagramHref(handle: string) {
 }
 
 export function PublicProfileView({ profile, listings }: Props) {
+  const catalogSectionId = "catalogo-vendedor";
   const activeLocations = Array.from(
     new Set(listings.map((listing) => getListingLocationPrimary(listing))),
   ).slice(0, 4);
@@ -62,9 +63,9 @@ export function PublicProfileView({ profile, listings }: Props) {
         </div>
 
         <div className={styles.actionRow}>
-          <Link className={styles.actionLink} href="/chat">
-            <MessageSquareText size={16} />
-            Abrir chat
+          <Link className={styles.actionLink} href={`#${catalogSectionId}`}>
+            <Store size={16} />
+            Ver catalogo
           </Link>
           <Link className={styles.secondaryLink} href="/feed">
             <Store size={16} />
@@ -170,9 +171,10 @@ export function PublicProfileView({ profile, listings }: Props) {
       </section>
 
       {listings.length ? (
-        <section className={styles.listingGrid}>
+        <section className={styles.listingGrid} id={catalogSectionId}>
           <div className={styles.sectionTitle}>
-            <strong>Anuncios</strong>
+            <strong>Catalogo</strong>
+            <span>{listings.length} anuncio(s) ativos.</span>
           </div>
           <div className="catalog-results-grid">
             {listings.map((listing) => (
@@ -186,8 +188,8 @@ export function PublicProfileView({ profile, listings }: Props) {
         </section>
       ) : (
         <div className={styles.emptyCard}>
-          <strong>Nenhum anuncio ativo.</strong>
-          <p>Nada publicado ainda.</p>
+          <strong>Catalogo sem anuncios ativos.</strong>
+          <p>Quando esse perfil publicar algo real, entra aqui.</p>
         </div>
       )}
     </section>

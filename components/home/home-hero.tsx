@@ -41,10 +41,12 @@ export function HomeHero({ listings }: Props) {
               </span>
             </div>
 
-            <h1 className="home-hero-title">Tudo que circula no campus.</h1>
+            <h1 className="home-hero-title">
+              A vida universitaria vira renda, troca e autonomia.
+            </h1>
 
             <p className="home-hero-description">
-              Produtos, moradia, aulas, transporte e demandas entre estudantes.
+              Aulas, servicos, moradia, caronas, projetos e demandas reais entre estudantes.
             </p>
 
             <div className="home-hero-actions">
@@ -56,7 +58,7 @@ export function HomeHero({ listings }: Props) {
             </div>
           </div>
 
-          <aside className="home-hero-collage" aria-label="Previa do que circula no app">
+          <aside className="home-hero-collage" aria-label="Previa das oportunidades do app">
             {hasListings ? (
               collageListings.map((listing, index) => (
                 <article
@@ -84,35 +86,35 @@ export function HomeHero({ listings }: Props) {
                   <div className="home-collage-surface" />
                   <div className="home-collage-copy">
                     <div className="home-collage-top">
-                      <span className="home-collage-badge">Feed real</span>
-                      <span className="home-collage-meta">Sem anuncio ficticio</span>
+                        <span className="home-collage-badge">Oportunidades reais</span>
+                        <span className="home-collage-meta">Sem vitrine inventada</span>
+                      </div>
+                      <strong>O campus passa a circular por aqui.</strong>
+                      <p>Quando a comunidade publica, a rede de oportunidades comeca a girar.</p>
                     </div>
-                    <strong>Os primeiros anuncios entram aqui.</strong>
-                    <p>Quando alguem publicar no CAMPUS, o feed comeca a circular.</p>
-                  </div>
-                </article>
-                <article className="home-collage-card stacked" data-tone="accent">
+                  </article>
+                  <article className="home-collage-card stacked" data-tone="accent">
                   <div className="home-collage-surface" />
                   <div className="home-collage-copy">
                     <div className="home-collage-top">
-                      <span className="home-collage-badge">Produtos</span>
-                      <span className="home-collage-meta">Tempo real</span>
+                        <span className="home-collage-badge">Troca e renda</span>
+                        <span className="home-collage-meta">Tempo real</span>
+                      </div>
+                      <strong>Ganhe dinheiro com o que voce sabe fazer.</strong>
+                      <p>Aulas, servicos, moradia, produtos e projetos circulam por aqui.</p>
                     </div>
-                    <strong>Nada inventado.</strong>
-                    <p>So aparece o que foi publicado de verdade.</p>
-                  </div>
-                </article>
-                <article className="home-collage-card stacked" data-tone="neutral">
+                  </article>
+                  <article className="home-collage-card stacked" data-tone="neutral">
                   <div className="home-collage-surface" />
                   <div className="home-collage-copy">
                     <div className="home-collage-top">
-                      <span className="home-collage-badge">Servicos e moradia</span>
-                      <span className="home-collage-meta">Campus</span>
+                        <span className="home-collage-badge">Rede universitaria</span>
+                        <span className="home-collage-meta">Campus</span>
+                      </div>
+                      <strong>Resolve estudo, renda e vida pratica no mesmo lugar.</strong>
+                      <p>Explora oportunidades ou publica o primeiro movimento da tua rede.</p>
                     </div>
-                    <strong>O app abre vazio e cresce com a comunidade.</strong>
-                    <p>Explora o feed ou publica o primeiro anuncio.</p>
-                  </div>
-                </article>
+                  </article>
               </>
             )}
           </aside>

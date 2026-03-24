@@ -73,8 +73,8 @@ const workspaceCopy: Record<
   }
 > = {
   consumer: {
-    feedTitle: "Produtos e servicos",
-    feedDescription: "O que esta circulando no campus.",
+    feedTitle: "Oportunidades do campus",
+    feedDescription: "Trocas, renda e solucoes reais entre estudantes.",
     searchPlaceholder: "Buscar livro, moradia, notebook, aula, montagem...",
     actionHref: "/anunciar?intent=request",
     actionLabel: "Nova demanda",
@@ -83,7 +83,7 @@ const workspaceCopy: Record<
   },
   seller: {
     feedTitle: "Demandas e oportunidades",
-    feedDescription: "Pedidos abertos e gente procurando agora.",
+    feedDescription: "Pedidos reais e gente procurando quem resolve.",
     searchPlaceholder:
       "Buscar demandas, pedidos e pessoas procurando servico...",
     actionHref: "/anunciar?intent=offer",

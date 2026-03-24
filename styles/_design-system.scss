@@ -1,3 +1,17 @@
+@forward "tokens/colors";
+@forward "tokens/motion";
+@forward "tokens/radius";
+@forward "tokens/shadow";
+@forward "tokens/spacing";
+@forward "tokens/theme";
+@forward "tokens/typography";
+@forward "tokens/z-index";
+
+@mixin focus-ring($ring: var(--focus-ring)) {
+  outline: none;
+  box-shadow: 0 0 0 4px $ring;
+}
+
 @mixin pressable(
   $hover-translate: -1px,
   $active-scale: 0.985,
@@ -6,11 +20,11 @@
   $hover-shadow: null
 ) {
   transition:
-    transform 0.18s ease,
-    border-color 0.18s ease,
-    background 0.18s ease,
-    box-shadow 0.18s ease,
-    color 0.18s ease;
+    transform var(--motion-duration-normal) var(--motion-easing-standard),
+    border-color var(--motion-duration-normal) var(--motion-easing-standard),
+    background var(--motion-duration-normal) var(--motion-easing-standard),
+    box-shadow var(--motion-duration-normal) var(--motion-easing-standard),
+    color var(--motion-duration-normal) var(--motion-easing-standard);
 
   &:hover,
   &:focus-visible {
@@ -26,7 +40,7 @@
   }
 
   &:active {
-    transform: scale($active-scale);
+    transform: translateY(0) scale($active-scale);
   }
 
   @media (hover: hover) {
@@ -38,32 +52,32 @@
 
 @mixin panel-shell(
   $padding: 1rem,
-  $radius: 1.05rem,
+  $radius: var(--radius-modal),
   $accent: var(--accent),
-  $shadow: var(--shadow-soft)
+  $shadow: var(--shadow-sm)
 ) {
   position: relative;
   display: grid;
   gap: 1rem;
   padding: $padding;
-  border: 1px solid color-mix(in srgb, $accent 10%, var(--line));
+  border: 1px solid var(--line);
   border-radius: $radius;
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, $accent 9%, transparent), transparent 16rem),
+    radial-gradient(circle at top right, color-mix(in srgb, $accent 5%, transparent), transparent 16rem),
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--surface-strong) 98%, transparent),
-      color-mix(in srgb, var(--surface) 94%, transparent)
+      color-mix(in srgb, var(--surface-elevated) 100%, transparent),
+      color-mix(in srgb, var(--surface) 98%, transparent)
     );
   box-shadow:
-    0 1px 0 color-mix(in srgb, var(--text) 4%, transparent) inset,
+    0 1px 0 color-mix(in srgb, var(--bg-surface) 96%, transparent) inset,
     $shadow;
   isolation: isolate;
 }
 
 @mixin panel-card(
   $padding: 0.92rem,
-  $radius: 0.96rem,
+  $radius: var(--radius-card),
   $accent: var(--accent),
   $background-strength: 96,
   $surface-strength: 92
@@ -71,14 +85,15 @@
   display: grid;
   gap: 0.75rem;
   padding: $padding;
-  border: 1px solid color-mix(in srgb, $accent 8%, var(--line));
+  border: 1px solid var(--line);
   border-radius: $radius;
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--surface-strong) #{$background-strength}%, transparent),
+      color-mix(in srgb, var(--surface-elevated) #{$background-strength}%, transparent),
       color-mix(in srgb, var(--surface) #{$surface-strength}%, transparent)
     );
+  box-shadow: var(--shadow-xs);
 }
 
 @mixin subtle-pill(
@@ -92,15 +107,15 @@
   gap: 0.38rem;
   min-height: $min-height;
   padding: $padding-y $padding-x;
-  border: 1px solid color-mix(in srgb, var(--text) 5%, var(--line));
+  border: 1px solid var(--line);
   border-radius: $radius;
-  background: color-mix(in srgb, var(--surface-strong) 82%, transparent);
+  background: color-mix(in srgb, var(--surface-elevated) 96%, transparent);
   color: var(--muted);
 }
 
 @mixin input-shell(
   $height: 3.6rem,
-  $radius: 0.92rem,
+  $radius: var(--radius-input),
   $padding-x: 0.92rem
 ) {
   display: flex;
@@ -108,12 +123,137 @@
   gap: 0.72rem;
   min-height: $height;
   padding: 0 $padding-x;
-  border: 1px solid color-mix(in srgb, var(--text) 5%, var(--line));
+  border: 1px solid var(--border-default);
   border-radius: $radius;
-  background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+  background: var(--bg-surface);
+  transition:
+    border-color 160ms var(--motion-easing-standard),
+    box-shadow 160ms var(--motion-easing-standard),
+    background-color 160ms var(--motion-easing-standard);
+
+  &:hover {
+    border-color: var(--border-strong);
+  }
 
   &:focus-within {
-    border-color: color-mix(in srgb, var(--accent) 18%, var(--line));
-    box-shadow: 0 0 0 0.18rem color-mix(in srgb, var(--accent) 8%, transparent);
+    border-color: var(--action-primary);
+    box-shadow: 0 0 0 4px var(--focus-ring);
+  }
+}
+
+@mixin button-primary(
+  $padding-y: var(--space-3),
+  $padding-x: 18px,
+  $radius: var(--radius-button)
+) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 3rem;
+  padding: $padding-y $padding-x;
+  border: none;
+  border-radius: $radius;
+  background: var(--action-primary);
+  color: var(--text-inverse);
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  box-shadow: var(--shadow-xs);
+  transition:
+    transform 160ms var(--motion-easing-standard),
+    background-color 160ms var(--motion-easing-standard),
+    box-shadow 160ms var(--motion-easing-standard),
+    border-color 160ms var(--motion-easing-standard);
+
+  &:hover {
+    background: var(--action-primary-hover);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    background: var(--action-primary-pressed);
+    transform: translateY(0) scale(0.985);
+  }
+
+  &:focus-visible {
+    @include focus-ring();
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+@mixin button-secondary(
+  $padding-y: var(--space-3),
+  $padding-x: 18px,
+  $radius: var(--radius-button)
+) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 3rem;
+  padding: $padding-y $padding-x;
+  border: 1px solid var(--border-default);
+  border-radius: $radius;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  box-shadow: var(--shadow-xs);
+  transition:
+    border-color 160ms var(--motion-easing-standard),
+    background-color 160ms var(--motion-easing-standard),
+    transform 160ms var(--motion-easing-standard),
+    box-shadow 160ms var(--motion-easing-standard);
+
+  &:hover {
+    background: var(--bg-surface-muted);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0) scale(0.985);
+  }
+
+  &:focus-visible {
+    @include focus-ring(rgba(17, 22, 29, 0.12));
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+@mixin card-shell(
+  $radius: var(--radius-card),
+  $border-color: var(--border-default),
+  $hover-border-color: rgba(255, 45, 111, 0.22)
+) {
+  background: var(--bg-surface);
+  border: 1px solid $border-color;
+  border-radius: $radius;
+  box-shadow: var(--shadow-xs);
+  transition:
+    transform var(--motion-duration-normal) var(--motion-easing-standard),
+    box-shadow var(--motion-duration-normal) var(--motion-easing-standard),
+    border-color var(--motion-duration-normal) var(--motion-easing-standard);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: $hover-border-color;
   }
 }

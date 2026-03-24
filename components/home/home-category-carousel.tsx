@@ -49,7 +49,7 @@ const categoryCards: CategoryCard[] = [
   },
   {
     title: "Demandas",
-    note: "Pedidos abertos",
+    note: "Problemas pra resolver",
     href: "/feed?intent=request",
     icon: HandCoins,
   },
@@ -65,8 +65,8 @@ export function HomeCategoryCarousel() {
     >
       <div className="container home-category-shell">
         <div className="home-section-head">
-          <span className="eyebrow">Categorias</span>
-          <h2 id="home-category-title">Explora por categoria</h2>
+          <span className="eyebrow">Oportunidades</span>
+          <h2 id="home-category-title">Explora o que move a vida no campus</h2>
         </div>
 
         <div className="home-category-marquee">

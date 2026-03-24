@@ -41,7 +41,7 @@ export default async function PublicProfilePage({
     notFound();
   }
 
-  const listings = await getProfileListings(profile.id, { limit: 8 });
+  const listings = await getProfileListings(profile.id, { limit: 24 });
 
   return (
     <PageShell mainClassName="section">
