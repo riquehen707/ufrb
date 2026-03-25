@@ -20,14 +20,15 @@ export default async function Home() {
           }}
           headingOverride={{
             eyebrow: "",
-            title: "O que ja esta rolando no campus",
+            title: "Catalogo do campus",
             description:
-              "Livros, eletronicos, moradia e outras oportunidades com filtros mais diretos.",
+              "Produtos, moradia e oportunidades publicadas agora.",
           }}
           hideWorkspaceSwitch
           hidePrimaryAction
           lockedWorkspace="consumer"
           chromeMode="minimal"
+          layoutMode="lanes"
         />
       </div>
     </PageShell>

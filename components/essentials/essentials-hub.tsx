@@ -17,13 +17,14 @@ type Props = {
   transportListings: Listing[];
 };
 
-type EssentialDeckItem = {
+type EssentialSignal = {
   id: "grupos" | "moradia" | "transporte";
   title: string;
   description: string;
   icon: LucideIcon;
   count: number;
   anchor: string;
+  priceHint: string;
 };
 
 const moneyFormatter = new Intl.NumberFormat("pt-BR", {
@@ -35,6 +36,30 @@ const moneyFormatter = new Intl.NumberFormat("pt-BR", {
 function getPriceHeadline(listing: Listing) {
   const unit = listing.priceUnit ? ` / ${listing.priceUnit}` : "";
   return `${moneyFormatter.format(listing.price)}${unit}`;
+}
+
+function getSignalCountLabel(
+  id: EssentialSignal["id"],
+  count: number,
+) {
+  if (id === "grupos") {
+    return count === 1 ? "1 grupo ou aula" : `${count} grupos e aulas`;
+  }
+
+  if (id === "moradia") {
+    return count === 1 ? "1 vaga de moradia" : `${count} vagas de moradia`;
+  }
+
+  return count === 1 ? "1 rota aberta" : `${count} rotas abertas`;
+}
+
+function getSignalPriceHint(listings: Listing[]) {
+  if (!listings.length) {
+    return "Sem anuncios agora";
+  }
+
+  const cheapestListing = [...listings].sort((left, right) => left.price - right.price)[0];
+  return `Desde ${getPriceHeadline(cheapestListing)}`;
 }
 
 function EmptyRail({
@@ -64,7 +89,7 @@ export function EssentialsHub({
   housingListings,
   transportListings,
 }: Props) {
-  const deckItems: EssentialDeckItem[] = [
+  const signals: EssentialSignal[] = [
     {
       id: "grupos",
       title: "Grupos e aulas",
@@ -72,6 +97,7 @@ export function EssentialsHub({
       icon: GraduationCap,
       count: studyListings.length,
       anchor: "#grupos",
+      priceHint: getSignalPriceHint(studyListings),
     },
     {
       id: "moradia",
@@ -80,6 +106,7 @@ export function EssentialsHub({
       icon: House,
       count: housingListings.length,
       anchor: "#moradia",
+      priceHint: getSignalPriceHint(housingListings),
     },
     {
       id: "transporte",
@@ -88,35 +115,43 @@ export function EssentialsHub({
       icon: BusFront,
       count: transportListings.length,
       anchor: "#transporte",
+      priceHint: getSignalPriceHint(transportListings),
     },
   ];
 
   return (
     <section className={styles.hub}>
       <div className={styles.hero}>
-        <div className={styles.heroCopy}>
-          <span className="eyebrow">Essenciais</span>
-          <h1>O que resolve a rotina do campus com menos atrito.</h1>
-          <p>
-            Um ponto rapido para entrar em grupos, procurar moradia e achar rotas
-            compartilhadas sem ficar pulando entre telas.
-          </p>
-        </div>
-      </div>
+        <div className={styles.heroLayout}>
+          <div className={styles.heroCopy}>
+            <span className="eyebrow">Essenciais</span>
+            <h1>O que resolve a rotina do campus com menos atrito.</h1>
+            <p>
+              Entre em grupos, veja vagas para dividir casa e acompanhe rotas
+              compartilhadas sem sair do fluxo principal.
+            </p>
+          </div>
 
-      <div className={styles.deck} aria-label="Entradas principais">
-        {deckItems.map(({ id, title, description, icon: Icon, count, anchor }) => (
-          <Link key={id} href={anchor} className={styles.deckCard}>
-            <span className={styles.deckIcon}>
-              <Icon size={20} />
-            </span>
-            <div className={styles.deckCopy}>
-              <strong>{title}</strong>
-              <span>{description}</span>
-            </div>
-            <em>{count}</em>
-          </Link>
-        ))}
+          <div className={styles.signalGrid} aria-label="Entradas principais">
+            {signals.map(({ id, title, description, icon: Icon, count, anchor, priceHint }) => (
+              <Link key={id} href={anchor} className={styles.signalCard}>
+                <span className={styles.signalTopline}>
+                  <span className={styles.signalIcon}>
+                    <Icon size={18} />
+                  </span>
+                  <em>{getSignalCountLabel(id, count)}</em>
+                </span>
+
+                <div className={styles.signalCopy}>
+                  <strong>{title}</strong>
+                  <span>{description}</span>
+                </div>
+
+                <small>{priceHint}</small>
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className={styles.stack}>

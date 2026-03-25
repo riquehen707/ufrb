@@ -16,6 +16,7 @@ export function InstallAppButton({
   labelOverride,
 }: Props) {
   const { installLabel, isStandalone, openInstall } = useInstallPrompt();
+  const buttonLabel = isStandalone ? "App instalado" : labelOverride ?? installLabel;
 
   if (hiddenWhenInstalled && isStandalone) {
     return null;
@@ -27,9 +28,11 @@ export function InstallAppButton({
       className={className}
       onClick={() => void openInstall()}
       disabled={isStandalone}
+      aria-label={buttonLabel}
+      title={buttonLabel}
     >
       <Download size={18} />
-      {isStandalone ? "App instalado" : labelOverride ?? installLabel}
+      {buttonLabel}
     </button>
   );
 }
