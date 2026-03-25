@@ -2864,6 +2864,28 @@ img {
 
 .mobile-dock-action-static {
   pointer-events: none;
+  color: var(--text-soft);
+}
+
+.mobile-dock-action-static .mobile-dock-action-orb {
+  border-color: color-mix(in srgb, var(--accent) 10%, var(--line));
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.14), transparent 38%),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--surface-strong) 92%, transparent),
+      color-mix(in srgb, var(--surface) 86%, transparent)
+    );
+  box-shadow: var(--shadow-sm);
+}
+
+.mobile-dock-action-static .mobile-dock-action-copy {
+  gap: 0;
+}
+
+.mobile-dock-action-static .mobile-dock-action-copy strong {
+  font-size: 0.74rem;
+  color: var(--text-soft);
 }
 
 .mobile-dock-link {
@@ -3330,6 +3352,23 @@ img {
   align-items: center;
   gap: 0.7rem;
   min-width: 0;
+}
+
+.shell-install-cta {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.35rem;
+  padding: 0.46rem 0.72rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line));
+  border-radius: 0.78rem;
+  background: color-mix(in srgb, var(--surface-elevated) 74%, transparent);
+  color: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: center;
 }
 
 .shell-header-badge {
@@ -4821,6 +4860,10 @@ img {
   .shell-header-badge,
   .footer-signal {
     display: none;
+  }
+
+  .shell-install-cta {
+    display: inline-flex;
   }
 
   .footer-inner {

@@ -20,6 +20,7 @@ export function MobileDock() {
   const [openRouteKey, setOpenRouteKey] = useState<string | null>(null);
   const actionContext = getNavigationContext({ pathname, searchParams });
   const ActionIcon = actionContext.icon;
+  const canOpenMenu = actionContext.actions.length > 0;
   const isMenuOpen = openRouteKey === routeKey;
 
   useEffect(() => {
@@ -53,56 +54,60 @@ export function MobileDock() {
 
   return (
     <>
-      <div
-        className={`mobile-action-backdrop ${isMenuOpen ? "active" : ""}`}
-        onClick={() => setOpenRouteKey(null)}
-        aria-hidden="true"
-      />
-
-      <div
-        id="mobile-action-sheet"
-        className={`mobile-action-sheet ${isMenuOpen ? "active" : ""}`}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="mobile-action-sheet-title"
-        aria-hidden={!isMenuOpen}
-      >
-        <div className="mobile-action-sheet-header">
-          <div className="mobile-action-sheet-copy">
-            <span className="mobile-action-sheet-eyebrow">{actionContext.label}</span>
-            <strong id="mobile-action-sheet-title">{actionContext.title}</strong>
-            <p>{actionContext.description}</p>
-          </div>
-
-          <button
-            type="button"
-            className="mobile-action-close"
+      {canOpenMenu ? (
+        <>
+          <div
+            className={`mobile-action-backdrop ${isMenuOpen ? "active" : ""}`}
             onClick={() => setOpenRouteKey(null)}
-            aria-label="Fechar menu de acoes"
-          >
-            <X size={18} />
-          </button>
-        </div>
+            aria-hidden="true"
+          />
 
-        <div className="mobile-action-list">
-          {actionContext.actions.map(({ href, label, description, icon: Icon }) => (
-            <Link
-              key={`${href}-${label}`}
-              href={href}
-              className="mobile-action-link"
-              onClick={() => setOpenRouteKey(null)}
-            >
-              <span className="mobile-action-link-icon">
-                <Icon size={18} />
-              </span>
-              <span className="mobile-action-link-copy">
-                <strong>{label}</strong>
-                <span>{description}</span>
-              </span>
-            </Link>
-          ))}
-        </div>
-      </div>
+          <div
+            id="mobile-action-sheet"
+            className={`mobile-action-sheet ${isMenuOpen ? "active" : ""}`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-action-sheet-title"
+            aria-hidden={!isMenuOpen}
+          >
+            <div className="mobile-action-sheet-header">
+              <div className="mobile-action-sheet-copy">
+                <span className="mobile-action-sheet-eyebrow">{actionContext.label}</span>
+                <strong id="mobile-action-sheet-title">{actionContext.title}</strong>
+                <p>{actionContext.description}</p>
+              </div>
+
+              <button
+                type="button"
+                className="mobile-action-close"
+                onClick={() => setOpenRouteKey(null)}
+                aria-label="Fechar menu de acoes"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mobile-action-list">
+              {actionContext.actions.map(({ href, label, description, icon: Icon }) => (
+                <Link
+                  key={`${href}-${label}`}
+                  href={href}
+                  className="mobile-action-link"
+                  onClick={() => setOpenRouteKey(null)}
+                >
+                  <span className="mobile-action-link-icon">
+                    <Icon size={18} />
+                  </span>
+                  <span className="mobile-action-link-copy">
+                    <strong>{label}</strong>
+                    <span>{description}</span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </>
+      ) : null}
 
       <nav className="mobile-dock" aria-label="Navegacao principal no celular">
         {fixedMobileNavItems.slice(0, 2).map(({ href, label, icon: Icon, match }) => {
@@ -123,21 +128,34 @@ export function MobileDock() {
           );
         })}
 
-        <button
-          type="button"
-          className={`mobile-dock-action ${isMenuOpen ? "active" : ""}`}
-          onClick={() => setOpenRouteKey((current) => (current === routeKey ? null : routeKey))}
-          aria-expanded={isMenuOpen}
-          aria-controls="mobile-action-sheet"
-        >
-          <span className="mobile-dock-action-orb">
-            <ActionIcon size={20} />
-          </span>
-          <span className="mobile-dock-action-copy">
-            <strong>{actionContext.label}</strong>
-            <span>menu</span>
-          </span>
-        </button>
+        {canOpenMenu ? (
+          <button
+            type="button"
+            className={`mobile-dock-action ${isMenuOpen ? "active" : ""}`}
+            onClick={() =>
+              setOpenRouteKey((current) => (current === routeKey ? null : routeKey))
+            }
+            aria-expanded={isMenuOpen}
+            aria-controls="mobile-action-sheet"
+          >
+            <span className="mobile-dock-action-orb">
+              <ActionIcon size={20} />
+            </span>
+            <span className="mobile-dock-action-copy">
+              <strong>{actionContext.label}</strong>
+              <span>menu</span>
+            </span>
+          </button>
+        ) : (
+          <div className="mobile-dock-action mobile-dock-action-static" aria-hidden="true">
+            <span className="mobile-dock-action-orb">
+              <ActionIcon size={20} />
+            </span>
+            <span className="mobile-dock-action-copy">
+              <strong>{actionContext.label}</strong>
+            </span>
+          </div>
+        )}
 
         {fixedMobileNavItems.slice(2).map(({ href, label, icon: Icon, match }) => {
           const active = isRouteActive(pathname, { match });
@@ -181,7 +199,6 @@ export function MobileDockFallback() {
         </span>
         <span className="mobile-dock-action-copy">
           <strong>{defaultNavigationContext.label}</strong>
-          <span>menu</span>
         </span>
       </div>
 

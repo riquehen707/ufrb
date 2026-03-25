@@ -1,23 +1,35 @@
-import { SignupCard } from "@/components/engagement/signup-card";
-import { HomeCategoryCarousel } from "@/components/home/home-category-carousel";
-import { HomeHero } from "@/components/home/home-hero";
-import { HomeStoryRail } from "@/components/home/home-story-rail";
+import { MarketplaceExplorer } from "@/components/marketplace/marketplace-explorer";
 import { PageShell } from "@/components/shell/page-shell";
+import { getMarketplaceDataWithOptions } from "@/lib/marketplace";
 
-export default function Home() {
+export default async function Home() {
+  const marketplace = await getMarketplaceDataWithOptions({ limit: 24 });
+  const homeListings = marketplace.listings.filter(
+    (listing) => listing.type === "product" && listing.intent === "offer",
+  );
+
   return (
-    <PageShell>
-      <>
-        <HomeHero />
-        <HomeCategoryCarousel />
-        <HomeStoryRail />
-
-        <section className="section home-account-section">
-          <div className="container home-account-grid">
-            <SignupCard />
-          </div>
-        </section>
-      </>
+    <PageShell mainClassName="section">
+      <div className="container catalog-page-shell">
+        <MarketplaceExplorer
+          listings={homeListings}
+          initialState={{
+            workspace: "consumer",
+            type: "product",
+            intent: "offer",
+          }}
+          headingOverride={{
+            eyebrow: "",
+            title: "O que ja esta rolando no campus",
+            description:
+              "Livros, eletronicos, moradia e outras oportunidades com filtros mais diretos.",
+          }}
+          hideWorkspaceSwitch
+          hidePrimaryAction
+          lockedWorkspace="consumer"
+          chromeMode="minimal"
+        />
+      </div>
     </PageShell>
   );
 }

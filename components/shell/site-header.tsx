@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { MobileDock, MobileDockFallback } from "@/components/shell/mobile-dock";
+import { InstallAppButton } from "@/components/engagement/install-app-button";
 import {
   desktopNavItems,
   isRouteActive,
@@ -50,6 +51,11 @@ export function SiteHeader() {
           </nav>
 
           <div className="shell-header-actions">
+            <InstallAppButton
+              className="shell-install-cta"
+              hiddenWhenInstalled
+              labelOverride="Instalar"
+            />
             <Link href="/perfil" className="shell-header-badge">
               Conta
             </Link>

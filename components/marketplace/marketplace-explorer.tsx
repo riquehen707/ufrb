@@ -33,6 +33,7 @@ import {
 type FeedWorkspace = "consumer" | "seller";
 type SortMode = "relevance" | "price_asc" | "price_desc" | "rating";
 type AccountType = "buyer" | "seller" | "service-provider";
+type ChromeMode = "default" | "minimal";
 
 type Props = {
   listings: Listing[];
@@ -52,6 +53,15 @@ type Props = {
   syncUrlPath?: string;
   persistedParams?: Record<string, string | undefined>;
   publishedNotice?: boolean;
+  headingOverride?: {
+    eyebrow?: string;
+    title?: string;
+    description?: string;
+  };
+  hideWorkspaceSwitch?: boolean;
+  hidePrimaryAction?: boolean;
+  lockedWorkspace?: FeedWorkspace;
+  chromeMode?: ChromeMode;
 };
 
 const moneyFormatter = new Intl.NumberFormat("pt-BR", {
@@ -189,20 +199,25 @@ export function MarketplaceExplorer({
   syncUrlPath,
   persistedParams,
   publishedNotice = false,
+  headingOverride,
+  hideWorkspaceSwitch = false,
+  hidePrimaryAction = false,
+  lockedWorkspace,
+  chromeMode = "default",
 }: Props) {
   const router = useRouter();
-  const hasExplicitWorkspace = Boolean(initialState?.workspace);
+  const hasExplicitWorkspace = Boolean(initialState?.workspace || lockedWorkspace);
   const [query, setQuery] = useState(initialState?.query ?? "");
   const [workspace, setWorkspace] = useState<FeedWorkspace>(
-    initialState?.workspace ?? "consumer",
+    initialState?.workspace ?? lockedWorkspace ?? "consumer",
   );
   const [activeType, setActiveType] = useState<"all" | "service" | "product">(
     initialState?.type ?? "all",
   );
   const [activeIntent, setActiveIntent] = useState<"all" | ListingIntent>(
     initialState?.intent ??
-      (initialState?.workspace
-        ? getDefaultIntentForWorkspace(initialState.workspace)
+      (initialState?.workspace || lockedWorkspace
+        ? getDefaultIntentForWorkspace(initialState?.workspace ?? lockedWorkspace ?? "consumer")
         : "offer"),
   );
   const [activeCategory, setActiveCategory] = useState(
@@ -225,8 +240,15 @@ export function MarketplaceExplorer({
     initialState?.sort ?? "relevance",
   );
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
-  const workspaceConfig = workspaceCopy[workspace];
-  const defaultIntent = getDefaultIntentForWorkspace(workspace);
+  const currentWorkspace = lockedWorkspace ?? workspace;
+  const workspaceConfig = workspaceCopy[currentWorkspace];
+  const defaultIntent = getDefaultIntentForWorkspace(currentWorkspace);
+  const eyebrow = headingOverride?.eyebrow ?? "Feed CAMPUS";
+  const title =
+    deferredQuery
+      ? `Resultados para "${query.trim()}"`
+      : headingOverride?.title ?? workspaceConfig.feedTitle;
+  const description = headingOverride?.description ?? workspaceConfig.feedDescription;
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -476,6 +498,8 @@ export function MarketplaceExplorer({
       : null,
     isHousingFilter && activeHousingGarage !== "all" ? "Com garagem" : null,
   ].filter(Boolean) as string[];
+  const showResultRow =
+    chromeMode !== "minimal" || activeFilters.length > 0 || Boolean(deferredQuery);
 
   function resetFilters(nextWorkspace: FeedWorkspace) {
     setActiveIntent(getDefaultIntentForWorkspace(nextWorkspace));
@@ -490,10 +514,14 @@ export function MarketplaceExplorer({
   }
 
   function clearFilters() {
-    resetFilters(workspace);
+    resetFilters(currentWorkspace);
   }
 
   function applyWorkspace(nextWorkspace: FeedWorkspace) {
+    if (lockedWorkspace) {
+      return;
+    }
+
     setWorkspace(nextWorkspace);
     resetFilters(nextWorkspace);
   }
@@ -535,8 +563,8 @@ export function MarketplaceExplorer({
       params.set("q", trimmedQuery);
     }
 
-    if (workspace !== "consumer") {
-      params.set("mode", workspace);
+    if (!lockedWorkspace && currentWorkspace !== "consumer") {
+      params.set("mode", currentWorkspace);
     }
 
     if (activeType !== "all") {
@@ -595,47 +623,52 @@ export function MarketplaceExplorer({
     router,
     sortMode,
     syncUrlPath,
-    workspace,
+    currentWorkspace,
+    lockedWorkspace,
   ]);
 
   return (
-    <section className={styles.explorer} data-workspace={workspace}>
+    <section
+      className={styles.explorer}
+      data-workspace={currentWorkspace}
+      data-chrome={chromeMode}
+    >
       <div className={styles.topbar}>
         <div className={styles.headerRow}>
           <div className={styles.heading}>
-            <span className="eyebrow">Feed CAMPUS</span>
-            <h2 className={styles.title}>
-              {deferredQuery
-                ? `Resultados para "${query.trim()}"`
-                : workspaceConfig.feedTitle}
-            </h2>
-            <p className={styles.lead}>{workspaceConfig.feedDescription}</p>
+            {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
+            <h2 className={styles.title}>{title}</h2>
+            {description ? <p className={styles.lead}>{description}</p> : null}
           </div>
 
           <div className={styles.headerActions}>
-            <div className="type-switch" role="tablist" aria-label="Modo atual do feed">
-              <button
-                type="button"
-                className={`type-pill ${workspace === "consumer" ? "active" : ""}`}
-                onClick={() => applyWorkspace("consumer")}
-              >
-                <ShoppingBag size={16} />
-                Comprar
-              </button>
-              <button
-                type="button"
-                className={`type-pill ${workspace === "seller" ? "active" : ""}`}
-                onClick={() => applyWorkspace("seller")}
-              >
-                <Store size={16} />
-                Vender
-              </button>
-            </div>
+            {!hideWorkspaceSwitch && !lockedWorkspace ? (
+              <div className="type-switch" role="tablist" aria-label="Modo atual do feed">
+                <button
+                  type="button"
+                  className={`type-pill ${workspace === "consumer" ? "active" : ""}`}
+                  onClick={() => applyWorkspace("consumer")}
+                >
+                  <ShoppingBag size={16} />
+                  Comprar
+                </button>
+                <button
+                  type="button"
+                  className={`type-pill ${workspace === "seller" ? "active" : ""}`}
+                  onClick={() => applyWorkspace("seller")}
+                >
+                  <Store size={16} />
+                  Vender
+                </button>
+              </div>
+            ) : null}
 
-            <Link className={`${styles.createAction} secondary-button`} href={workspaceConfig.actionHref}>
-              <SquarePen size={16} />
-              {workspaceConfig.actionLabel}
-            </Link>
+            {!hidePrimaryAction ? (
+              <Link className={`${styles.createAction} secondary-button`} href={workspaceConfig.actionHref}>
+                <SquarePen size={16} />
+                {workspaceConfig.actionLabel}
+              </Link>
+            ) : null}
           </div>
         </div>
 
@@ -690,10 +723,7 @@ export function MarketplaceExplorer({
 
             <div className={styles.filterBody}>
               <div className={styles.filterIntro}>
-                <div className={styles.filterCopy}>
-                  <strong>Refinar o feed</strong>
-                  <span>Mostra so o que faz sentido agora.</span>
-                </div>
+                <span className={styles.filterHint}>Categorias, recortes e estado.</span>
 
                 {activeFilters.length ? (
                   <button
@@ -893,28 +923,30 @@ export function MarketplaceExplorer({
         </div>
       ) : null}
 
-      <div className={styles.resultRow}>
-        <div className={styles.resultCopy}>
-          <span>{getResultSummary(filteredListings.length, workspace)}</span>
-        </div>
-
-        {activeFilters.length ? (
-          <div className={styles.resultFilters}>
-            {activeFilters.map((filter) => (
-              <span key={filter} className={styles.filterPill}>
-                {filter}
-              </span>
-            ))}
-            <button
-              type="button"
-              className={styles.clearButton}
-              onClick={clearFilters}
-            >
-              Limpar
-            </button>
+      {showResultRow ? (
+        <div className={styles.resultRow}>
+          <div className={styles.resultCopy}>
+            <span>{getResultSummary(filteredListings.length, currentWorkspace)}</span>
           </div>
-        ) : null}
-      </div>
+
+          {activeFilters.length ? (
+            <div className={styles.resultFilters}>
+              {activeFilters.map((filter) => (
+                <span key={filter} className={styles.filterPill}>
+                  {filter}
+                </span>
+              ))}
+              <button
+                type="button"
+                className={styles.clearButton}
+                onClick={clearFilters}
+              >
+                Limpar
+              </button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {filteredListings.length ? (
         <div className={styles.resultsGrid}>
@@ -931,9 +963,11 @@ export function MarketplaceExplorer({
           <div className="empty-state-copy">
             <strong>{workspaceConfig.emptyTitle}</strong>
             <p>{workspaceConfig.emptyDescription}</p>
-            <Link className="secondary-button" href={workspaceConfig.actionHref}>
-              {workspaceConfig.actionLabel}
-            </Link>
+            {!hidePrimaryAction ? (
+              <Link className="secondary-button" href={workspaceConfig.actionHref}>
+                {workspaceConfig.actionLabel}
+              </Link>
+            ) : null}
           </div>
         </div>
       )}

@@ -105,30 +105,11 @@ function getListingId(pathname: string) {
 
 function getHomeContext(): NavigationContext {
   return {
-    label: "Criar",
-    title: "Acoes",
-    description: "Publicar ou abrir trabalhos.",
-    icon: SquarePen,
-    actions: [
-      {
-        href: buildAnnounceHref({ intent: "offer" }),
-        label: "Publicar produto",
-        description: "Livro, item ou vaga.",
-        icon: SquarePen,
-      },
-      {
-        href: buildAnnounceHref({ intent: "request" }),
-        label: "Encontrar ajuda",
-        description: "Abrir um pedido.",
-        icon: HandCoins,
-      },
-      {
-        href: "/trabalhos",
-        label: "Dar aula ou ajudar",
-        description: "Aulas, servicos e rotas.",
-        icon: BriefcaseBusiness,
-      },
-    ],
+    label: "Inicio",
+    title: "Catalogo",
+    description: "Entrada principal do CAMPUS.",
+    icon: House,
+    actions: [],
   };
 }
 
