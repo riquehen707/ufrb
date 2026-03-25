@@ -1,0 +1,245 @@
+@use "../../styles/design-system" as *;
+
+.card {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 17.8rem;
+  max-width: 19.4rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--accent) 10%, var(--line));
+  border-radius: 1rem;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-strong) 96%, transparent),
+      color-mix(in srgb, var(--surface) 92%, transparent)
+    );
+  box-shadow: var(--shadow-sm);
+  @include pressable(
+    $hover-translate: -1px,
+    $hover-border: color-mix(in srgb, var(--accent) 18%, var(--line))
+  );
+
+  &:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 4px var(--focus-ring),
+      var(--shadow-md);
+  }
+
+  &[data-lane="products"] {
+    --lane-accent: color-mix(in srgb, var(--primary) 74%, white);
+  }
+
+  &[data-lane="housing"] {
+    --lane-accent: color-mix(in srgb, var(--accent) 76%, white);
+  }
+
+  &[data-lane="classes"] {
+    --lane-accent: color-mix(in srgb, var(--info) 72%, var(--accent));
+  }
+
+  &[data-lane="services"] {
+    --lane-accent: color-mix(in srgb, var(--warning) 72%, var(--accent));
+  }
+
+  &[data-lane="transport"] {
+    --lane-accent: color-mix(in srgb, var(--info) 72%, var(--primary));
+  }
+}
+
+.media {
+  position: relative;
+  aspect-ratio: 1.16 / 1;
+  overflow: hidden;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 8%, var(--line));
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--lane-accent) 18%, transparent), transparent 11rem),
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--surface-elevated) 94%, transparent),
+      color-mix(in srgb, var(--surface) 92%, transparent)
+    );
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: color-mix(in srgb, var(--text) 84%, var(--lane-accent));
+}
+
+.mediaScrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(9, 11, 20, 0.06), rgba(9, 11, 20, 0.12) 36%, rgba(9, 11, 20, 0.64)),
+    linear-gradient(135deg, color-mix(in srgb, var(--lane-accent) 12%, transparent), transparent 62%);
+}
+
+.topline {
+  position: absolute;
+  top: 0.72rem;
+  left: 0.72rem;
+  right: 0.72rem;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.intentPill,
+.kickerPill,
+.priceBadge,
+.metaChip {
+  backdrop-filter: blur(12px);
+}
+
+.intentPill,
+.kickerPill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.9rem;
+  padding: 0.34rem 0.62rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.72rem;
+  background: rgba(9, 11, 20, 0.4);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.priceBadge {
+  position: absolute;
+  left: 0.72rem;
+  bottom: 0.72rem;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.38rem 0.68rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.8rem;
+  background: rgba(9, 11, 20, 0.54);
+  color: #fff;
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.body {
+  display: grid;
+  gap: 0.78rem;
+  padding: 0.84rem;
+}
+
+.summary {
+  display: grid;
+  gap: 0.18rem;
+
+  strong {
+    display: -webkit-box;
+    overflow: hidden;
+    font-family: var(--font-display), sans-serif;
+    font-size: 1rem;
+    letter-spacing: -0.04em;
+    line-height: 1.02;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  span {
+    display: -webkit-box;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.metaChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 1.95rem;
+  max-width: 100%;
+  padding: 0.34rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 10%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-elevated) 74%, transparent);
+  color: var(--text-soft);
+  font-size: 0.76rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.footer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+  padding-top: 0.08rem;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 8%, var(--line));
+}
+
+.sellerChip {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.78rem;
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--lane-accent) 78%, transparent),
+      color-mix(in srgb, var(--surface-strong) 64%, transparent)
+    );
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.footerCopy {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footerAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+@media (max-width: 640px) {
+  .card {
+    min-width: min(82vw, 18rem);
+  }
+
+  .body {
+    padding: 0.78rem;
+  }
+}

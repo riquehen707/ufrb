@@ -7,6 +7,7 @@ import {
   GraduationCap,
   HandCoins,
   House,
+  LayoutGrid,
   MessageSquareText,
   SquarePen,
   Store,
@@ -52,11 +53,6 @@ function matchesRoot(pathname: string) {
 
 function matchesPrefix(prefix: string) {
   return (pathname: string) => pathname.startsWith(prefix);
-}
-
-function matchesAnyPrefix(...prefixes: string[]) {
-  return (pathname: string) =>
-    prefixes.some((prefix) => pathname.startsWith(prefix));
 }
 
 function readParam(searchParams: SearchParamReader, key: string) {
@@ -165,10 +161,39 @@ function getFeedContext(searchParams: SearchParamReader): NavigationContext {
         icon: Store,
       },
       {
-        href: "/trabalhos",
-        label: "Dar aula ou ajudar",
-        description: "Aulas, servicos e rotas.",
-        icon: BriefcaseBusiness,
+        href: "/essenciais",
+        label: "Abrir essenciais",
+        description: "Grupos, moradia e rotas.",
+        icon: LayoutGrid,
+      },
+    ],
+  };
+}
+
+function getEssentialsContext(): NavigationContext {
+  return {
+    label: "Essenciais",
+    title: "Essenciais",
+    description: "Grupos, moradia e transporte em um ponto rapido.",
+    icon: LayoutGrid,
+    actions: [
+      {
+        href: "/trabalhos?aba=aulas",
+        label: "Entrar em grupos",
+        description: "Aulas, monitoria e banca.",
+        icon: GraduationCap,
+      },
+      {
+        href: "/feed?type=product&category=Moradia",
+        label: "Buscar moradia",
+        description: "Quartos e vagas para dividir.",
+        icon: House,
+      },
+      {
+        href: "/trabalhos?aba=transporte",
+        label: "Ver transporte",
+        description: "Rotas e grupos por horario.",
+        icon: BusFront,
       },
     ],
   };
@@ -681,10 +706,10 @@ export const fixedMobileNavItems: NavigationItem[] = [
     match: matchesRoot,
   },
   {
-    href: "/feed",
-    label: "Feed",
-    icon: Compass,
-    match: matchesAnyPrefix("/feed", "/anuncios"),
+    href: "/essenciais",
+    label: "Essenciais",
+    icon: LayoutGrid,
+    match: matchesPrefix("/essenciais"),
   },
   {
     href: "/chat",
@@ -702,11 +727,11 @@ export const fixedMobileNavItems: NavigationItem[] = [
 
 export const desktopNavItems: NavigationItem[] = [
   {
-    href: "/feed",
-    label: "Feed",
-    meta: "Descobrir",
-    icon: Compass,
-    match: matchesAnyPrefix("/feed", "/anuncios"),
+    href: "/essenciais",
+    label: "Essenciais",
+    meta: "Rotina e grupos",
+    icon: LayoutGrid,
+    match: matchesPrefix("/essenciais"),
   },
   {
     href: "/trabalhos",
@@ -743,6 +768,10 @@ export function getNavigationContext({
 }: NavigationRouteState): NavigationContext {
   if (pathname === "/") {
     return getHomeContext();
+  }
+
+  if (pathname.startsWith("/essenciais")) {
+    return getEssentialsContext();
   }
 
   if (pathname.startsWith("/feed")) {

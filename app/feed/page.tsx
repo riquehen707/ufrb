@@ -99,6 +99,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
             publicado: hasNewListing ? "1" : undefined,
           }}
           publishedNotice={hasNewListing}
+          layoutMode="lanes"
         />
       </div>
     </PageShell>

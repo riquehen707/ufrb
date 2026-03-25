@@ -5,6 +5,10 @@ import { useDeferredValue, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowUpDown,
+  BriefcaseBusiness,
+  GraduationCap,
+  House,
+  Package,
   Search,
   ShoppingBag,
   SlidersHorizontal,
@@ -13,6 +17,7 @@ import {
 } from "lucide-react";
 
 import styles from "@/components/marketplace/marketplace-explorer.module.scss";
+import { MarketplaceLaneCard } from "@/components/marketplace/marketplace-lane-card";
 import { MarketplaceListingCard } from "@/components/marketplace/marketplace-listing-card";
 import {
   getHousingGenderLabel,
@@ -34,6 +39,8 @@ type FeedWorkspace = "consumer" | "seller";
 type SortMode = "relevance" | "price_asc" | "price_desc" | "rating";
 type AccountType = "buyer" | "seller" | "service-provider";
 type ChromeMode = "default" | "minimal";
+type LayoutMode = "grid" | "lanes";
+type FeedLaneId = "products" | "housing" | "classes" | "services";
 
 type Props = {
   listings: Listing[];
@@ -62,6 +69,7 @@ type Props = {
   hidePrimaryAction?: boolean;
   lockedWorkspace?: FeedWorkspace;
   chromeMode?: ChromeMode;
+  layoutMode?: LayoutMode;
 };
 
 const moneyFormatter = new Intl.NumberFormat("pt-BR", {
@@ -102,6 +110,90 @@ const workspaceCopy: Record<
     emptyDescription: "Tenta outro filtro ou publica algo.",
   },
 };
+
+const laneDefinitions: Array<{
+  id: FeedLaneId;
+  title: string;
+  description: string;
+  icon: typeof Package;
+}> = [
+  {
+    id: "products",
+    title: "Produtos",
+    description: "Itens, livros e eletronicos.",
+    icon: Package,
+  },
+  {
+    id: "housing",
+    title: "Moradia",
+    description: "Quartos, casas e vagas.",
+    icon: House,
+  },
+  {
+    id: "classes",
+    title: "Aulas",
+    description: "Monitoria, reforco e banca.",
+    icon: GraduationCap,
+  },
+  {
+    id: "services",
+    title: "Servicos",
+    description: "Freelas, reparos e ajuda.",
+    icon: BriefcaseBusiness,
+  },
+] as const;
+
+function normalizeCategory(value?: string | null) {
+  return (value ?? "")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+}
+
+function getLaneIdForListing(listing: Listing): FeedLaneId {
+  if (isHousingCategory(listing.category)) {
+    return "housing";
+  }
+
+  const normalizedCategory = normalizeCategory(listing.category);
+
+  if (normalizedCategory === "aulas e monitoria") {
+    return "classes";
+  }
+
+  if (listing.type === "service") {
+    return "services";
+  }
+
+  return "products";
+}
+
+function getLaneIdFromFilters(
+  category: string,
+  type: "all" | "service" | "product",
+): FeedLaneId | "all" {
+  if (category !== "all") {
+    if (isHousingCategory(category)) {
+      return "housing";
+    }
+
+    if (normalizeCategory(category) === "aulas e monitoria") {
+      return "classes";
+    }
+
+    return type === "service" ? "services" : "products";
+  }
+
+  if (type === "product") {
+    return "products";
+  }
+
+  if (type === "service") {
+    return "services";
+  }
+
+  return "all";
+}
 
 function getPriceHeadline(listing: Listing) {
   const unit = listing.priceUnit ? ` / ${listing.priceUnit}` : "";
@@ -204,10 +296,27 @@ export function MarketplaceExplorer({
   hidePrimaryAction = false,
   lockedWorkspace,
   chromeMode = "default",
+  layoutMode = "grid",
 }: Props) {
   const router = useRouter();
   const hasExplicitWorkspace = Boolean(initialState?.workspace || lockedWorkspace);
+  const hasInitialFilters = Boolean(
+    initialState?.query ||
+      (initialState?.category && initialState.category !== "all") ||
+      (initialState?.focus && initialState.focus !== "all") ||
+      (initialState?.condition && initialState.condition !== "all") ||
+      (initialState?.intent && initialState.intent !== "all") ||
+      (initialState?.type && initialState.type !== "all") ||
+      (initialState?.housingGender && initialState.housingGender !== "all") ||
+      (initialState?.housingPaymentDay &&
+        initialState.housingPaymentDay !== "all") ||
+      (initialState?.housingGarage && initialState.housingGarage !== "all") ||
+      (initialState?.sort && initialState.sort !== "relevance"),
+  );
   const [query, setQuery] = useState(initialState?.query ?? "");
+  const [searchOpen, setSearchOpen] = useState(Boolean(initialState?.query));
+  const [filtersOpen, setFiltersOpen] = useState(hasInitialFilters);
+  const [focusedLane, setFocusedLane] = useState<FeedLaneId | "all">("all");
   const [workspace, setWorkspace] = useState<FeedWorkspace>(
     initialState?.workspace ?? lockedWorkspace ?? "consumer",
   );
@@ -500,6 +609,25 @@ export function MarketplaceExplorer({
   ].filter(Boolean) as string[];
   const showResultRow =
     chromeMode !== "minimal" || activeFilters.length > 0 || Boolean(deferredQuery);
+  const derivedLane = getLaneIdFromFilters(categoryFilter, activeType);
+  const activeLane =
+    layoutMode === "lanes"
+      ? derivedLane === "all"
+        ? focusedLane
+        : derivedLane
+      : "all";
+  const laneSections = laneDefinitions.map((definition) => ({
+    ...definition,
+    listings: filteredListings.filter(
+      (listing) => getLaneIdForListing(listing) === definition.id,
+    ),
+  }));
+  const visibleLaneSections =
+    layoutMode === "lanes"
+      ? laneSections.filter((section) =>
+          activeLane === "all" ? section.listings.length > 0 : section.id === activeLane,
+        )
+      : [];
 
   function resetFilters(nextWorkspace: FeedWorkspace) {
     setActiveIntent(getDefaultIntentForWorkspace(nextWorkspace));
@@ -511,6 +639,7 @@ export function MarketplaceExplorer({
     setActiveHousingPaymentDay("all");
     setActiveHousingGarage("all");
     setSortMode("relevance");
+    setFocusedLane("all");
   }
 
   function clearFilters() {
@@ -534,6 +663,7 @@ export function MarketplaceExplorer({
       setActiveHousingGender("all");
       setActiveHousingPaymentDay("all");
       setActiveHousingGarage("all");
+      setFocusedLane("all");
       return;
     }
 
@@ -646,7 +776,7 @@ export function MarketplaceExplorer({
               <div className="type-switch" role="tablist" aria-label="Modo atual do feed">
                 <button
                   type="button"
-                  className={`type-pill ${workspace === "consumer" ? "active" : ""}`}
+                  className={`type-pill ${currentWorkspace === "consumer" ? "active" : ""}`}
                   onClick={() => applyWorkspace("consumer")}
                 >
                   <ShoppingBag size={16} />
@@ -654,7 +784,7 @@ export function MarketplaceExplorer({
                 </button>
                 <button
                   type="button"
-                  className={`type-pill ${workspace === "seller" ? "active" : ""}`}
+                  className={`type-pill ${currentWorkspace === "seller" ? "active" : ""}`}
                   onClick={() => applyWorkspace("seller")}
                 >
                   <Store size={16} />
@@ -680,223 +810,243 @@ export function MarketplaceExplorer({
       </div>
 
       <div className={styles.commandArea}>
-        <div className={styles.commandGrid}>
-          <div className={styles.searchCard}>
-            <Search size={18} />
-            <input
-              className={styles.searchInput}
-              type="search"
-              placeholder={workspaceConfig.searchPlaceholder}
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </div>
-
-          <div className={styles.sortCard}>
-            <label htmlFor="feed-sort">
-              <ArrowUpDown size={14} />
-              Ordenar
-            </label>
-            <select
-              id="feed-sort"
-              className="select-field"
-              value={sortMode}
-              onChange={(event) => setSortMode(event.target.value as SortMode)}
+        <div className={styles.commandDock}>
+          <div className={styles.commandButtons}>
+            <button
+              type="button"
+              className={`${styles.commandButton} ${searchOpen ? styles.commandButtonActive : ""}`}
+              onClick={() => setSearchOpen((current) => !current)}
+              aria-expanded={searchOpen}
+              aria-controls="feed-search-panel"
             >
-              <option value="relevance">Mais relevantes</option>
-              <option value="price_asc">Menor preco</option>
-              <option value="price_desc">Maior preco</option>
-              <option value="rating">Melhor avaliados</option>
-            </select>
+              <Search size={17} />
+              <span>Buscar</span>
+              {query.trim() ? <em>{query.trim().length}</em> : null}
+            </button>
+
+            <button
+              type="button"
+              className={`${styles.commandButton} ${filtersOpen ? styles.commandButtonActive : ""}`}
+              onClick={() => setFiltersOpen((current) => !current)}
+              aria-expanded={filtersOpen}
+              aria-controls="feed-filter-panel"
+            >
+              <SlidersHorizontal size={17} />
+              <span>Filtros</span>
+              {activeFilters.length ? <em>{activeFilters.length}</em> : null}
+            </button>
           </div>
+        </div>
 
-          <details className={styles.filterPanel}>
-            <summary className={styles.filterSummary}>
-              <span className={styles.filterTitle}>
-                <SlidersHorizontal size={16} />
-                Filtros
-              </span>
-              <span className={styles.filterMeta}>
-                {activeFilters.length ? `${activeFilters.length} ativos` : "Abrir"}
-              </span>
-            </summary>
+        {searchOpen ? (
+          <div id="feed-search-panel" className={styles.searchPanel}>
+            <div className={styles.searchCard}>
+              <Search size={18} />
+              <input
+                className={styles.searchInput}
+                type="search"
+                placeholder={workspaceConfig.searchPlaceholder}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </div>
+          </div>
+        ) : null}
 
-            <div className={styles.filterBody}>
-              <div className={styles.filterIntro}>
-                <span className={styles.filterHint}>Categorias, recortes e estado.</span>
+        {filtersOpen ? (
+          <div id="feed-filter-panel" className={styles.filterPanelExpanded}>
+            <div className={styles.filterIntro}>
+              <span className={styles.filterHint}>Categorias, recortes, ordem e estado.</span>
 
-                {activeFilters.length ? (
-                  <button
-                    type="button"
-                    className={styles.clearButton}
-                    onClick={clearFilters}
-                  >
-                    Limpar
-                  </button>
-                ) : null}
-              </div>
+              {activeFilters.length ? (
+                <button
+                  type="button"
+                  className={styles.clearButton}
+                  onClick={clearFilters}
+                >
+                  Limpar
+                </button>
+              ) : null}
+            </div>
 
-              <div className={styles.filterGrid}>
-                {workspace === "seller" ? (
-                  <div className="field">
-                    <label htmlFor="filter-intent">Mercado</label>
-                    <select
-                      id="filter-intent"
-                      className="select-field"
-                      value={activeIntent}
-                      onChange={(event) =>
-                        setActiveIntent(event.target.value as "all" | ListingIntent)
-                      }
-                    >
-                      <option value="request">Demandas</option>
-                      <option value="offer">Ofertas</option>
-                      <option value="all">Tudo</option>
-                    </select>
-                  </div>
-                ) : null}
-
-                <div className="field">
-                  <label htmlFor="filter-type">Tipo</label>
+            <div className={styles.filterGrid}>
+              <div className="field">
+                <label htmlFor="feed-sort">Ordenar</label>
+                <div className={styles.sortField}>
+                  <ArrowUpDown size={14} />
                   <select
-                    id="filter-type"
+                    id="feed-sort"
                     className="select-field"
-                    value={activeType}
-                    onChange={(event) =>
-                      setActiveType(
-                        event.target.value as "all" | "service" | "product",
-                      )
-                    }
+                    value={sortMode}
+                    onChange={(event) => setSortMode(event.target.value as SortMode)}
                   >
-                    <option value="all">Tudo</option>
-                    <option value="service">Servicos</option>
-                    <option value="product">Produtos</option>
+                    <option value="relevance">Mais relevantes</option>
+                    <option value="price_asc">Menor preco</option>
+                    <option value="price_desc">Maior preco</option>
+                    <option value="rating">Melhor avaliados</option>
                   </select>
                 </div>
+              </div>
 
+              {currentWorkspace === "seller" ? (
                 <div className="field">
-                  <label htmlFor="filter-category">Categoria</label>
+                  <label htmlFor="filter-intent">Mercado</label>
                   <select
-                    id="filter-category"
+                    id="filter-intent"
                     className="select-field"
-                    value={categoryFilter}
-                    onChange={(event) => setActiveCategory(event.target.value)}
+                    value={activeIntent}
+                    onChange={(event) =>
+                      setActiveIntent(event.target.value as "all" | ListingIntent)
+                    }
                   >
-                    <option value="all">Todas</option>
-                    {availableCategories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
+                    <option value="request">Demandas</option>
+                    <option value="offer">Ofertas</option>
+                    <option value="all">Tudo</option>
+                  </select>
+                </div>
+              ) : null}
+
+              <div className="field">
+                <label htmlFor="filter-type">Tipo</label>
+                <select
+                  id="filter-type"
+                  className="select-field"
+                  value={activeType}
+                  onChange={(event) =>
+                    setActiveType(
+                      event.target.value as "all" | "service" | "product",
+                    )
+                  }
+                >
+                  <option value="all">Tudo</option>
+                  <option value="service">Servicos</option>
+                  <option value="product">Produtos</option>
+                </select>
+              </div>
+
+              <div className="field">
+                <label htmlFor="filter-category">Categoria</label>
+                <select
+                  id="filter-category"
+                  className="select-field"
+                  value={categoryFilter}
+                  onChange={(event) => setActiveCategory(event.target.value)}
+                >
+                  <option value="all">Todas</option>
+                  {availableCategories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {availableFocuses.length ? (
+                <div className="field">
+                  <label htmlFor="filter-focus">{getFocusLabel(categoryFilter)}</label>
+                  <select
+                    id="filter-focus"
+                    className="select-field"
+                    value={focusFilter}
+                    onChange={(event) => setActiveFocus(event.target.value)}
+                  >
+                    <option value="all">Todos</option>
+                    {availableFocuses.map((focus) => (
+                      <option key={focus} value={focus}>
+                        {focus}
                       </option>
                     ))}
                   </select>
                 </div>
+              ) : null}
 
-                {availableFocuses.length ? (
-                  <div className="field">
-                    <label htmlFor="filter-focus">{getFocusLabel(categoryFilter)}</label>
-                    <select
-                      id="filter-focus"
-                      className="select-field"
-                      value={focusFilter}
-                      onChange={(event) => setActiveFocus(event.target.value)}
-                    >
-                      <option value="all">Todos</option>
-                      {availableFocuses.map((focus) => (
-                        <option key={focus} value={focus}>
-                          {focus}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ) : null}
+              {activeType !== "service" && availableConditions.length ? (
+                <div className="field">
+                  <label htmlFor="filter-condition">Estado</label>
+                  <select
+                    id="filter-condition"
+                    className="select-field"
+                    value={conditionFilter}
+                    onChange={(event) =>
+                      setActiveCondition(event.target.value as "all" | ItemCondition)
+                    }
+                  >
+                    <option value="all">Todos</option>
+                    {availableConditions.map((condition) => (
+                      <option key={condition} value={condition}>
+                        {itemConditionLabels[condition]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
 
-                {activeType !== "service" && availableConditions.length ? (
-                  <div className="field">
-                    <label htmlFor="filter-condition">Estado</label>
-                    <select
-                      id="filter-condition"
-                      className="select-field"
-                      value={conditionFilter}
-                      onChange={(event) =>
-                        setActiveCondition(event.target.value as "all" | ItemCondition)
-                      }
-                    >
-                      <option value="all">Todos</option>
-                      {availableConditions.map((condition) => (
-                        <option key={condition} value={condition}>
-                          {itemConditionLabels[condition]}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ) : null}
+              {isHousingFilter && availableHousingGenders.length ? (
+                <div className="field">
+                  <label htmlFor="filter-housing-gender">Genero</label>
+                  <select
+                    id="filter-housing-gender"
+                    className="select-field"
+                    value={housingGenderFilter}
+                    onChange={(event) =>
+                      setActiveHousingGender(
+                        event.target.value as "all" | HousingGenderPreference,
+                      )
+                    }
+                  >
+                    <option value="all">Todos</option>
+                    {availableHousingGenders.map((gender) => (
+                      <option key={gender} value={gender}>
+                        {getHousingGenderLabel(gender)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
 
-                {isHousingFilter && availableHousingGenders.length ? (
-                  <div className="field">
-                    <label htmlFor="filter-housing-gender">Genero</label>
-                    <select
-                      id="filter-housing-gender"
-                      className="select-field"
-                      value={housingGenderFilter}
-                      onChange={(event) =>
-                        setActiveHousingGender(
-                          event.target.value as "all" | HousingGenderPreference,
-                        )
-                      }
-                    >
-                      <option value="all">Todos</option>
-                      {availableHousingGenders.map((gender) => (
-                        <option key={gender} value={gender}>
-                          {getHousingGenderLabel(gender)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ) : null}
+              {isHousingFilter && availableHousingPaymentDays.length ? (
+                <div className="field">
+                  <label htmlFor="filter-housing-payment">Pagamento</label>
+                  <select
+                    id="filter-housing-payment"
+                    className="select-field"
+                    value={housingPaymentDayFilter}
+                    onChange={(event) => setActiveHousingPaymentDay(event.target.value)}
+                  >
+                    <option value="all">Todos</option>
+                    {availableHousingPaymentDays.map((day) => (
+                      <option key={day} value={String(day)}>
+                        {getHousingPaymentLabel(day)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
 
-                {isHousingFilter && availableHousingPaymentDays.length ? (
-                  <div className="field">
-                    <label htmlFor="filter-housing-payment">Pagamento</label>
-                    <select
-                      id="filter-housing-payment"
-                      className="select-field"
-                      value={housingPaymentDayFilter}
-                      onChange={(event) => setActiveHousingPaymentDay(event.target.value)}
-                    >
-                      <option value="all">Todos</option>
-                      {availableHousingPaymentDays.map((day) => (
-                        <option key={day} value={String(day)}>
-                          {getHousingPaymentLabel(day)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ) : null}
-
-                {isHousingFilter ? (
-                  <div className="field">
-                    <label htmlFor="filter-housing-garage">Garagem</label>
-                    <select
-                      id="filter-housing-garage"
-                      className="select-field"
-                      value={activeHousingGarage}
-                      onChange={(event) =>
-                        setActiveHousingGarage(
-                          event.target.value as "all" | "with_garage",
-                        )
-                      }
-                    >
-                      <option value="all">Todas</option>
-                      <option value="with_garage">Com garagem</option>
-                    </select>
-                  </div>
-                ) : null}
-              </div>
+              {isHousingFilter ? (
+                <div className="field">
+                  <label htmlFor="filter-housing-garage">Garagem</label>
+                  <select
+                    id="filter-housing-garage"
+                    className="select-field"
+                    value={activeHousingGarage}
+                    onChange={(event) =>
+                      setActiveHousingGarage(
+                        event.target.value as "all" | "with_garage",
+                      )
+                    }
+                  >
+                    <option value="all">Todas</option>
+                    <option value="with_garage">Com garagem</option>
+                  </select>
+                </div>
+              ) : null}
             </div>
-          </details>
-        </div>
+          </div>
+        ) : null}
       </div>
 
-      {availableCategories.length > 1 ? (
+      {layoutMode === "grid" && availableCategories.length > 1 ? (
         <div className={styles.categoryRow} aria-label="Categorias">
           <button
             type="button"
@@ -918,6 +1068,43 @@ export function MarketplaceExplorer({
               onClick={() => applyCategoryQuickFilter(category)}
             >
               {category}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {layoutMode === "lanes" ? (
+        <div className={styles.laneNav} aria-label="Frentes principais do feed">
+          <button
+            type="button"
+            className={`${styles.laneNavCard} ${activeLane === "all" ? styles.laneNavCardActive : ""}`}
+            onClick={() => setFocusedLane("all")}
+          >
+            <span className={styles.laneNavCopy}>
+              <strong>Tudo</strong>
+              <span>Visao geral do campus</span>
+            </span>
+            <em>{filteredListings.length}</em>
+          </button>
+
+          {laneSections.map(({ id, title, description, icon: Icon, listings: laneListings }) => (
+            <button
+              key={id}
+              type="button"
+              className={`${styles.laneNavCard} ${
+                activeLane === id ? styles.laneNavCardActive : ""
+              }`}
+              onClick={() => setFocusedLane(id)}
+              disabled={laneListings.length === 0}
+            >
+              <span className={styles.laneNavIcon}>
+                <Icon size={18} />
+              </span>
+              <span className={styles.laneNavCopy}>
+                <strong>{title}</strong>
+                <span>{description}</span>
+              </span>
+              <em>{laneListings.length}</em>
             </button>
           ))}
         </div>
@@ -948,7 +1135,48 @@ export function MarketplaceExplorer({
         </div>
       ) : null}
 
-      {filteredListings.length ? (
+      {layoutMode === "lanes" ? (
+        visibleLaneSections.length ? (
+          <div className={styles.laneStack}>
+            {visibleLaneSections.map((section) => (
+              <section key={section.id} className={styles.laneSection}>
+                <div className={styles.laneHeader}>
+                  <div className={styles.laneHeading}>
+                    <span className={styles.laneEyebrow}>{section.description}</span>
+                    <h3>{section.title}</h3>
+                  </div>
+                  <span className={styles.laneCount}>
+                    {getResultSummary(section.listings.length, currentWorkspace)}
+                  </span>
+                </div>
+
+                <div className={styles.laneRail}>
+                  {section.listings.map((listing) => (
+                    <MarketplaceLaneCard
+                      key={listing.id}
+                      listing={listing}
+                      laneId={section.id}
+                      priceHeadline={getPriceHeadline(listing)}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <div className="empty-state-copy">
+              <strong>{workspaceConfig.emptyTitle}</strong>
+              <p>{workspaceConfig.emptyDescription}</p>
+              {!hidePrimaryAction ? (
+                <Link className="secondary-button" href={workspaceConfig.actionHref}>
+                  {workspaceConfig.actionLabel}
+                </Link>
+              ) : null}
+            </div>
+          </div>
+        )
+      ) : filteredListings.length ? (
         <div className={styles.resultsGrid}>
           {filteredListings.map((listing) => (
             <MarketplaceListingCard

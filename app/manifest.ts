@@ -34,6 +34,12 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
     shortcuts: [
       {
+        name: "Abrir essenciais",
+        short_name: "Essenciais",
+        description: "Grupos, moradia e transporte em um lugar so",
+        url: "/essenciais",
+      },
+      {
         name: "Ver oportunidades",
         short_name: "Feed",
         description: "Explorar oportunidades reais",
