@@ -10,8 +10,11 @@ export function SiteFooter() {
         </div>
 
         <div className="footer-signals" aria-label="Acoes do rodape">
-          <Link href="/doar" className="footer-inline-link">
-            Apoiar o CAMPUS
+          <Link href="/anunciar" className="footer-inline-link">
+            Publicar no CAMPUS
+          </Link>
+          <Link href="/tokens" className="footer-inline-link">
+            Planos e tokens
           </Link>
         </div>
       </div>

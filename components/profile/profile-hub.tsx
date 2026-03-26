@@ -1,13 +1,25 @@
 import Link from "next/link";
-import { Compass, PenSquare, ShieldCheck, Store, UserRound } from "lucide-react";
+import {
+  Compass,
+  Coins,
+  PenSquare,
+  ShieldCheck,
+  Store,
+  UserRound,
+} from "lucide-react";
 
 import { AuthPanel } from "@/components/auth/auth-panel";
 import { ProfileActivityPanel } from "@/components/profile/profile-activity-panel";
+import { ProfileListingActions } from "@/components/profile/profile-listing-actions";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import styles from "@/components/profile/profile-shell.module.scss";
 import { MarketplaceListingCard } from "@/components/marketplace/marketplace-listing-card";
 import { getListingMoneyHeadline } from "@/lib/listing-detail";
 import { summarizeListingPerformance } from "@/lib/marketplace-manager";
+import {
+  getLowBalanceThreshold,
+  getNextMonthlyGrantDate,
+} from "@/lib/monetization/plans";
 import type { ProfileActivitySnapshot } from "@/lib/profile-activity";
 import type { Listing } from "@/lib/listings";
 import { getListingLocationPrimary } from "@/lib/location";
@@ -44,6 +56,17 @@ function getProfileRatingLabel(value: number, hasReviews: boolean) {
   return hasReviews ? value.toFixed(1) : "Sem avaliacoes";
 }
 
+function formatShortDate(value?: string | Date | null) {
+  if (!value) {
+    return "no proximo ciclo";
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "short",
+  }).format(new Date(value));
+}
+
 export function ProfileHub({
   profile,
   listings,
@@ -67,6 +90,13 @@ export function ProfileHub({
     new Set(listings.map((listing) => getListingLocationPrimary(listing))),
   ).slice(0, 4);
   const listingSnapshot = summarizeListingPerformance(listings);
+  const lowBalanceThreshold = getLowBalanceThreshold(profile.planType);
+  const isLowBalance = profile.tokenBalance <= lowBalanceThreshold;
+  const nextMonthlyGrantDate =
+    profile.planType === "free"
+      ? getNextMonthlyGrantDate(profile.monthlyTokenLastGrantedAt)
+      : null;
+  const nextMonthlyGrantLabel = formatShortDate(nextMonthlyGrantDate);
 
   return (
     <section className={styles.shell}>
@@ -90,6 +120,9 @@ export function ProfileHub({
                 <ShieldCheck size={14} />
                 {profile.verifiedStudent ? "Estudante verificado" : "Conta ativa"}
               </span>
+              {profile.planType === "pro" ? (
+                <span className={styles.metaPill}>Selo Pro</span>
+              ) : null}
               <span className={styles.metaPill}>{profile.campus}</span>
               {profile.course ? <span className={styles.metaPill}>{profile.course}</span> : null}
             </div>
@@ -105,6 +138,10 @@ export function ProfileHub({
             <UserRound size={16} />
             Ver perfil publico
           </Link>
+          <Link className={styles.secondaryLink} href="/tokens">
+            <Coins size={16} />
+            Planos e tokens
+          </Link>
           <Link className={styles.secondaryLink} href="/feed?mode=seller">
             <Store size={16} />
             Ver modo vender
@@ -119,8 +156,8 @@ export function ProfileHub({
           <strong>{getProfileRatingLabel(profile.reliabilityScore, profile.reviewCount > 0)}</strong>
         </article>
         <article className={styles.statCard}>
-          <span>Apoio dado</span>
-          <strong>{moneyFormatter.format(profile.supportBalance)}</strong>
+          <span>Tokens</span>
+          <strong>{profile.tokenBalance}</strong>
         </article>
         <article className={styles.statCard}>
           <span>Moradia</span>
@@ -129,9 +166,62 @@ export function ProfileHub({
           </strong>
         </article>
         <article className={styles.statCard}>
-          <span>Anuncios ativos</span>
-          <strong>{listings.length}</strong>
+          <span>Tokens ganhos</span>
+          <strong>{profile.tokenEarned}</strong>
         </article>
+      </section>
+
+      <section className={styles.listingGrid}>
+        <div className={styles.sectionTitle}>
+          <strong>Saldo e plano</strong>
+          <span>
+            {profile.planType === "pro"
+              ? "Plano Pro ativo por 30 dias a cada Pix confirmado."
+              : `Plano Free libera 3 tokens por mes. Proxima recarga ${nextMonthlyGrantLabel}.`}
+          </span>
+        </div>
+        <div className={styles.previewGrid}>
+          <article className={styles.statCard}>
+            <span>Voce tem</span>
+            <strong>{profile.tokenBalance} tokens</strong>
+            <p className={styles.helperText}>
+              {isLowBalance
+                ? "Saldo baixo para publicar com folga."
+                : "Simples custa 1 token. Premium custa 2."}
+            </p>
+          </article>
+          <article className={styles.statCard}>
+            <span>Plano atual</span>
+            <strong>{profile.planType === "pro" ? "Pro" : "Free"}</strong>
+            <p className={styles.helperText}>
+              {profile.planType === "pro"
+                ? "Selo ativo e prioridade moderada nos anuncios."
+                : "Tu pode comprar pacotes quando precisar."}
+            </p>
+          </article>
+          <article className={styles.statCard}>
+            <span>{profile.planType === "pro" ? "Credito do ciclo" : "Credito mensal"}</span>
+            <strong>{profile.planType === "pro" ? "40 tokens" : "3 tokens"}</strong>
+            <p className={styles.helperText}>
+              {profile.planType === "pro"
+                ? "Liberado quando o Pix do Pro confirmar."
+                : `Proxima recarga ${nextMonthlyGrantLabel}.`}
+            </p>
+          </article>
+          <article className={styles.statCard}>
+            <span>Recarga</span>
+            <strong>{isLowBalance ? "Saldo insuficiente" : "Planos e tokens"}</strong>
+            <p className={styles.helperText}>
+              {isLowBalance
+                ? "Compre mais tokens ou assine o plano Pro."
+                : "Abre o historico, os pacotes e o plano Pro."}
+            </p>
+            <Link className={styles.secondaryLink} href="/tokens">
+              <Coins size={16} />
+              Abrir agora
+            </Link>
+          </article>
+        </div>
       </section>
 
       <section className={styles.listingGrid}>
@@ -230,6 +320,12 @@ export function ProfileHub({
       </section>
 
       <ProfileActivityPanel activity={activity} />
+
+      <ProfileListingActions
+        listings={listings}
+        tokenBalance={profile.tokenBalance}
+        planType={profile.planType}
+      />
 
       {listings.length ? (
         <section className={styles.listingGrid}>

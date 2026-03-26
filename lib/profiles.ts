@@ -12,6 +12,9 @@ import {
   supabaseAnonKey,
   supabaseUrl,
 } from "@/lib/supabase/env";
+import type { PlanType } from "@/lib/monetization/types";
+import { syncExpiredProAccess } from "@/lib/services/billing-service";
+import { grantMonthlyTokensIfEligible } from "@/lib/services/token-service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type PublicProfile = {
@@ -29,14 +32,16 @@ export type PublicProfile = {
   contactPhone?: string;
   instagramHandle?: string;
   verifiedStudent: boolean;
+  planType: PlanType;
   reliabilityScore: number;
   productRating: number;
   serviceRating: number;
   transportRating: number;
   housingRating: number;
   housingReviewCount: number;
-  supportBalance: number;
-  supportCount: number;
+  tokenBalance: number;
+  tokenEarned: number;
+  monthlyTokenLastGrantedAt?: string;
   reviewCount: number;
 };
 
@@ -55,19 +60,21 @@ type ProfileRow = {
   contact_phone: string | null;
   instagram_handle: string | null;
   verified_student: boolean | null;
+  plan_type: PlanType | null;
   reliability_score: number | string | null;
   product_rating: number | string | null;
   service_rating: number | string | null;
   transport_rating: number | string | null;
   housing_rating: number | string | null;
   housing_review_count: number | null;
-  support_balance: number | string | null;
-  support_count: number | null;
+  token_balance: number | null;
+  token_earned: number | null;
+  monthly_token_last_granted_at: string | null;
   review_count: number | null;
 };
 
 const profileSelect =
-  "id, full_name, university, campus, account_type, course, bio, headline, specialties, avatar_url, contact_email, contact_phone, instagram_handle, verified_student, reliability_score, product_rating, service_rating, transport_rating, housing_rating, housing_review_count, support_balance, support_count, review_count";
+  "id, full_name, university, campus, account_type, course, bio, headline, specialties, avatar_url, contact_email, contact_phone, instagram_handle, verified_student, plan_type, reliability_score, product_rating, service_rating, transport_rating, housing_rating, housing_review_count, token_balance, token_earned, monthly_token_last_granted_at, review_count";
 
 function normalizeProfile(row: ProfileRow): PublicProfile {
   return {
@@ -85,14 +92,16 @@ function normalizeProfile(row: ProfileRow): PublicProfile {
     contactPhone: row.contact_phone ?? undefined,
     instagramHandle: row.instagram_handle ?? undefined,
     verifiedStudent: Boolean(row.verified_student),
+    planType: row.plan_type ?? "free",
     reliabilityScore: row.reliability_score ? Number(row.reliability_score) : 0,
     productRating: row.product_rating ? Number(row.product_rating) : 0,
     serviceRating: row.service_rating ? Number(row.service_rating) : 0,
     transportRating: row.transport_rating ? Number(row.transport_rating) : 0,
     housingRating: row.housing_rating ? Number(row.housing_rating) : 0,
     housingReviewCount: row.housing_review_count ?? 0,
-    supportBalance: row.support_balance ? Number(row.support_balance) : 0,
-    supportCount: row.support_count ?? 0,
+    tokenBalance: row.token_balance ?? 0,
+    tokenEarned: row.token_earned ?? 0,
+    monthlyTokenLastGrantedAt: row.monthly_token_last_granted_at ?? undefined,
     reviewCount: row.review_count ?? 0,
   };
 }
@@ -120,25 +129,21 @@ function buildCurrentProfileFallback(user: User): PublicProfile {
     contactPhone: undefined,
     instagramHandle: undefined,
     verifiedStudent: isVerifiedStudentEmail(user.email),
+    planType: "free",
     reliabilityScore: 0,
     productRating: 0,
     serviceRating: 0,
     transportRating: 0,
     housingRating: 0,
     housingReviewCount: 0,
-    supportBalance: 0,
-    supportCount: 0,
+    tokenBalance: 0,
+    tokenEarned: 0,
+    monthlyTokenLastGrantedAt: undefined,
     reviewCount: 0,
   };
 }
 
-async function ensureCurrentProfileRow(user: User) {
-  const supabase = await createSupabaseServerClient();
-
-  if (!supabase) {
-    return buildCurrentProfileFallback(user);
-  }
-
+async function ensureCurrentProfileRow(supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>, user: User) {
   const { data: existingProfile } = await supabase
     .from("profiles")
     .select(profileSelect)
@@ -160,6 +165,7 @@ async function ensureCurrentProfileRow(user: User) {
       account_type: fallbackProfile.accountType,
       contact_email: fallbackProfile.contactEmail ?? null,
       verified_student: fallbackProfile.verifiedStudent,
+      plan_type: fallbackProfile.planType,
     })
     .select(profileSelect)
     .single();
@@ -250,6 +256,7 @@ export async function getProfileListings(profileId: string, options?: {
       .eq("status", "active")
       .eq("owner_id", profileId)
       .order("featured", { ascending: false })
+      .order("priority_boost", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(limit);
 
@@ -284,9 +291,21 @@ export async function getCurrentProfile() {
     };
   }
 
+  try {
+    await grantMonthlyTokensIfEligible(supabase);
+  } catch {
+    // Keep the profile accessible even if the monthly grant RPC is unavailable.
+  }
+
+  try {
+    await syncExpiredProAccess(user.id);
+  } catch {
+    // Keep the profile accessible even if subscription expiry sync is unavailable.
+  }
+
   return {
     userId: user.id,
-    profile: await ensureCurrentProfileRow(user),
+    profile: await ensureCurrentProfileRow(supabase, user),
   };
 }
 

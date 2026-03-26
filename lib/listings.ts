@@ -6,6 +6,7 @@ import type {
   ListingType,
   NegotiationMode,
 } from "@/lib/listing-taxonomy";
+import type { ListingTier } from "@/lib/monetization/types";
 
 export type Listing = {
   id: string;
@@ -28,7 +29,14 @@ export type Listing = {
   sellerCourse: string;
   rating: number;
   deliveryMode: string;
+  listingTier: ListingTier;
+  tokenCost: number;
+  priorityBoost: number;
   featured: boolean;
+  featuredUntil?: string;
+  expiresAt?: string;
+  renewalCount: number;
+  lastRenewedAt?: string;
   description: string;
   tags: string[];
 };
@@ -54,13 +62,20 @@ export type ListingRow = {
   seller_course: string | null;
   rating: number | string | null;
   delivery_mode: string | null;
+  listing_tier: ListingTier | null;
+  token_cost: number | null;
+  priority_boost: number | null;
   featured: boolean | null;
+  featured_until: string | null;
+  expires_at: string | null;
+  renewal_count: number | null;
+  last_renewed_at: string | null;
   description: string | null;
   tags: string[] | null;
 };
 
 export const listingSelect =
-  "id, owner_id, intent, title, type, category, focus, item_condition, negotiation_mode, image_url, gallery_urls, location_note, housing_details, price, price_unit, campus, seller_name, seller_course, rating, delivery_mode, featured, description, tags";
+  "id, owner_id, intent, title, type, category, focus, item_condition, negotiation_mode, image_url, gallery_urls, location_note, housing_details, price, price_unit, campus, seller_name, seller_course, rating, delivery_mode, listing_tier, token_cost, priority_boost, featured, featured_until, expires_at, renewal_count, last_renewed_at, description, tags";
 
 export function normalizeListing(row: ListingRow): Listing {
   return {
@@ -85,7 +100,14 @@ export function normalizeListing(row: ListingRow): Listing {
     sellerCourse: row.seller_course ?? "Comunidade academica",
     rating: row.rating ? Number(row.rating) : 0,
     deliveryMode: row.delivery_mode ?? "Combinado pelo campus",
+    listingTier: row.listing_tier ?? "simple",
+    tokenCost: row.token_cost ?? 0,
+    priorityBoost: row.priority_boost ?? 0,
     featured: Boolean(row.featured),
+    featuredUntil: row.featured_until ?? undefined,
+    expiresAt: row.expires_at ?? undefined,
+    renewalCount: row.renewal_count ?? 0,
+    lastRenewedAt: row.last_renewed_at ?? undefined,
     description:
       row.description ?? "Anuncio carregado do Supabase sem descricao detalhada.",
     tags: row.tags ?? [],

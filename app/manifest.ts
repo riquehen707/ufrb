@@ -63,6 +63,12 @@ export default function manifest(): MetadataRoute.Manifest {
         description: "Conta, reputacao e teu ecossistema",
         url: "/perfil",
       },
+      {
+        name: "Planos e tokens",
+        short_name: "Tokens",
+        description: "Saldo, pacotes e plano Pro",
+        url: "/tokens",
+      },
     ],
   };
 }

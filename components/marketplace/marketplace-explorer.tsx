@@ -60,6 +60,7 @@ type Props = {
   syncUrlPath?: string;
   persistedParams?: Record<string, string | undefined>;
   publishedNotice?: boolean;
+  publishedNoticeLabel?: string;
   headingOverride?: {
     eyebrow?: string;
     title?: string;
@@ -291,6 +292,7 @@ export function MarketplaceExplorer({
   syncUrlPath,
   persistedParams,
   publishedNotice = false,
+  publishedNoticeLabel,
   headingOverride,
   hideWorkspaceSwitch = false,
   hidePrimaryAction = false,
@@ -804,7 +806,9 @@ export function MarketplaceExplorer({
 
         {publishedNotice ? (
           <div className={styles.noticeRow}>
-            <span className={styles.noticePill}>Anuncio publicado</span>
+            <span className={styles.noticePill}>
+              {publishedNoticeLabel ?? "Anuncio publicado"}
+            </span>
           </div>
         ) : null}
       </div>

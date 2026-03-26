@@ -1,34 +1,49 @@
-import { MarketplaceExplorer } from "@/components/marketplace/marketplace-explorer";
+import { HomeCatalog } from "@/components/home/home-catalog";
 import { PageShell } from "@/components/shell/page-shell";
+import { isHousingCategory } from "@/lib/housing";
 import { getMarketplaceDataWithOptions } from "@/lib/marketplace";
 
 export default async function Home() {
-  const marketplace = await getMarketplaceDataWithOptions({ limit: 24 });
-  const homeListings = marketplace.listings.filter(
-    (listing) => listing.type === "product" && listing.intent === "offer",
-  );
+  const marketplace = await getMarketplaceDataWithOptions({ limit: 60 });
+  const listings = marketplace.listings.filter((listing) => listing.intent === "offer");
+
+  const normalizeCategory = (value?: string | null) =>
+    (value ?? "")
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLowerCase();
+
+  const productListings = listings
+    .filter(
+      (listing) =>
+        listing.type === "product" && !isHousingCategory(listing.category),
+    )
+    .slice(0, 12);
+  const housingListings = listings
+    .filter((listing) => isHousingCategory(listing.category))
+    .slice(0, 12);
+  const classListings = listings
+    .filter(
+      (listing) => normalizeCategory(listing.category) === "aulas e monitoria",
+    )
+    .slice(0, 12);
+  const serviceListings = listings
+    .filter(
+      (listing) =>
+        listing.type === "service" &&
+        normalizeCategory(listing.category) !== "aulas e monitoria" &&
+        normalizeCategory(listing.category) !== "transporte comunitario",
+    )
+    .slice(0, 12);
 
   return (
     <PageShell mainClassName="section">
       <div className="container catalog-page-shell">
-        <MarketplaceExplorer
-          listings={homeListings}
-          initialState={{
-            workspace: "consumer",
-            type: "product",
-            intent: "offer",
-          }}
-          headingOverride={{
-            eyebrow: "",
-            title: "Catalogo do campus",
-            description:
-              "Produtos, moradia e oportunidades publicadas agora.",
-          }}
-          hideWorkspaceSwitch
-          hidePrimaryAction
-          lockedWorkspace="consumer"
-          chromeMode="minimal"
-          layoutMode="lanes"
+        <HomeCatalog
+          productListings={productListings}
+          housingListings={housingListings}
+          classListings={classListings}
+          serviceListings={serviceListings}
         />
       </div>
     </PageShell>

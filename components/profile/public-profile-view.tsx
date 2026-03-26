@@ -13,13 +13,6 @@ type Props = {
   listings: Listing[];
 };
 
-const moneyFormatter = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
-});
-
 function getInitials(name: string) {
   return name
     .split(" ")
@@ -59,6 +52,9 @@ export function PublicProfileView({ profile, listings }: Props) {
                 <ShieldCheck size={14} />
                 {profile.verifiedStudent ? "Estudante verificado" : "Conta ativa"}
               </span>
+              {profile.planType === "pro" ? (
+                <span className={styles.metaPill}>Selo Pro</span>
+              ) : null}
               <span className={styles.metaPill}>{profile.university}</span>
               <span className={styles.metaPill}>{profile.campus}</span>
               {profile.course ? <span className={styles.metaPill}>{profile.course}</span> : null}
@@ -101,12 +97,6 @@ export function PublicProfileView({ profile, listings }: Props) {
             {getProfileRatingLabel(profile.housingRating, profile.housingReviewCount > 0)}
           </strong>
         </article>
-        {profile.supportCount ? (
-          <article className={styles.statCard}>
-            <span>Apoio</span>
-            <strong>{moneyFormatter.format(profile.supportBalance)}</strong>
-          </article>
-        ) : null}
         <article className={styles.statCard}>
           <span>Avaliacoes</span>
           <strong>{profile.reviewCount}</strong>

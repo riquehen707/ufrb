@@ -158,7 +158,7 @@ export function EssentialsHub({
         <section id="grupos" className={styles.section}>
           <div className={styles.sectionHead}>
             <div className={styles.sectionCopy}>
-              <span className={styles.sectionEyebrow}>Estudo e apoio</span>
+              <span className={styles.sectionEyebrow}>Estudo e grupos</span>
               <h2>Grupos e aulas</h2>
               <p>Aqui entram monitoria, reforco, banca e grupos em formacao.</p>
             </div>

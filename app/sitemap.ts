@@ -38,6 +38,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.82,
     },
     {
+      url: `${siteUrl}/tokens`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.78,
+    },
+    {
       url: `${siteUrl}/entrar`,
       lastModified: now,
       changeFrequency: "weekly",
@@ -48,12 +54,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.72,
-    },
-    {
-      url: `${siteUrl}/doar`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.7,
     },
     {
       url: `${siteUrl}/chat`,

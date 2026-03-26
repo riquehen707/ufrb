@@ -27,6 +27,7 @@ import {
   type ListingType,
   type NegotiationMode,
 } from "@/lib/listing-taxonomy";
+import { getListingCreationTokenCost } from "@/lib/monetization/token-costs";
 import {
   getHousingGenderOptions,
   getHousingIncludedItems,
@@ -42,9 +43,11 @@ import {
   type HousingListingKind,
   type HousingObligation,
 } from "@/lib/housing";
+import type { PlanType } from "@/lib/monetization/types";
 import { readPermissionState, type AppPermissionState } from "@/lib/permissions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { isSupabaseConfigured, listingMediaBucket } from "@/lib/supabase/env";
+import { TokenActionModal } from "@/components/tokens/token-action-modal";
 
 type HousingDraft = {
   listingKind: HousingListingKind;
@@ -92,10 +95,25 @@ type MessageState =
     }
   | null;
 
+type ActionGuardState =
+  | {
+      mode: "insufficient";
+    }
+  | null;
+
 type Props = {
   initialIntent?: ListingIntent;
   initialType?: ListingType;
   initialCategory?: string;
+  tokenSummary?: {
+    tokenBalance: number;
+    planType: PlanType;
+  } | null;
+};
+
+type UploadedListingMedia = {
+  path: string;
+  url: string;
 };
 
 function createInitialHousingDraft(): HousingDraft {
@@ -293,6 +311,7 @@ export function ListingComposer({
   initialIntent = "offer",
   initialType = "service",
   initialCategory,
+  tokenSummary = null,
 }: Props) {
   const router = useRouter();
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
@@ -301,7 +320,11 @@ export function ListingComposer({
     createInitialDraft(initialIntent, initialType, initialCategory),
   );
   const [message, setMessage] = useState<MessageState>(null);
+  const [actionGuard, setActionGuard] = useState<ActionGuardState>(null);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+  const [tokenBalance, setTokenBalance] = useState<number | null>(
+    tokenSummary?.tokenBalance ?? null,
+  );
   const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([]);
   const [selectedImagePreviews, setSelectedImagePreviews] = useState<string[]>([]);
   const [isLocating, setIsLocating] = useState(false);
@@ -372,6 +395,9 @@ export function ListingComposer({
   const focusOptions = getFocusOptions(draft.category);
   const housingDetails = serializeHousingDetails(draft);
   const housingIncludedItems = getHousingIncludedItems(housingDetails);
+  const listingMonetization = getListingCreationTokenCost(draft.type, draft.category);
+  const remainingTokenBalance =
+    tokenBalance === null ? null : tokenBalance - listingMonetization.amount;
   function updateField<K extends keyof Draft>(field: K, value: Draft[K]) {
     setDraft((current) => ({
       ...current,
@@ -582,7 +608,7 @@ export function ListingComposer({
       throw new Error("upload-client-unavailable");
     }
 
-    const uploadedUrls: string[] = [];
+    const uploadedFiles: UploadedListingMedia[] = [];
 
     for (const file of selectedImageFiles) {
       const extension = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
@@ -599,15 +625,19 @@ export function ListingComposer({
       }
 
       const { data } = supabase.storage.from(listingMediaBucket).getPublicUrl(path);
-      uploadedUrls.push(data.publicUrl);
+      uploadedFiles.push({
+        path,
+        url: data.publicUrl,
+      });
     }
 
-    return uploadedUrls;
+    return uploadedFiles;
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(null);
+    setActionGuard(null);
 
     if (!isSupabaseConfigured()) {
       setMessage({
@@ -631,6 +661,17 @@ export function ListingComposer({
       setMessage({
         tone: "error",
         text: "Moradia precisa de dia de pagamento para entrar bem no feed.",
+      });
+      return;
+    }
+
+    if (tokenBalance !== null && tokenBalance < listingMonetization.amount) {
+      setActionGuard({
+        mode: "insufficient",
+      });
+      setMessage({
+        tone: "error",
+        text: "Saldo insuficiente.",
       });
       return;
     }
@@ -659,11 +700,11 @@ export function ListingComposer({
           return;
         }
 
-        let uploadedImageUrls: string[] = [];
+        let uploadedMedia: UploadedListingMedia[] = [];
 
         if (selectedImageFiles.length) {
           try {
-            uploadedImageUrls = await uploadListingMedia(user.id);
+            uploadedMedia = await uploadListingMedia(user.id);
           } catch {
             setMessage({
               tone: "error",
@@ -674,55 +715,98 @@ export function ListingComposer({
           }
         }
 
+        const uploadedImageUrls = uploadedMedia.map((item) => item.url);
         const tags = buildAutoTags(draft);
         const housing = serializeHousingDetails(draft);
 
-        const { error } = await supabase.from("listings").insert({
-          owner_id: user.id,
-          seller_name:
-            user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Perfil CAMPUS",
-          seller_course: draft.sellerCourse || null,
-          intent: draft.intent,
-          campus: draft.campus,
-          type: draft.type,
-          category: draft.category,
-          focus: draft.focus || null,
-          item_condition: draft.type === "product" ? draft.itemCondition : null,
-          negotiation_mode: draft.negotiationMode,
-          image_url: uploadedImageUrls[0] ?? null,
-          gallery_urls: uploadedImageUrls.length ? uploadedImageUrls : null,
-          location_note: draft.locationNote || null,
-          location_lat: draft.locationLat,
-          location_lng: draft.locationLng,
-          housing_details: housing,
-          title: draft.title,
-          description: draft.description,
-          price,
-          price_unit: draft.priceUnit || null,
-          delivery_mode: draft.deliveryMode,
-          tags,
-          status: "active",
-          featured: false,
+        const response = await fetch("/api/listings", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            sellerCourse: draft.sellerCourse || null,
+            intent: draft.intent,
+            campus: draft.campus,
+            type: draft.type,
+            category: draft.category,
+            focus: draft.focus || null,
+            itemCondition: draft.type === "product" ? draft.itemCondition : null,
+            negotiationMode: draft.negotiationMode,
+            imageUrl: uploadedImageUrls[0] ?? null,
+            galleryUrls: uploadedImageUrls,
+            locationNote: draft.locationNote || null,
+            locationLat: draft.locationLat,
+            locationLng: draft.locationLng,
+            housingDetails: housing,
+            title: draft.title,
+            description: draft.description,
+            price,
+            priceUnit: draft.priceUnit || null,
+            deliveryMode: draft.deliveryMode,
+            tags,
+          }),
         });
 
-        if (error) {
+        if (!response.ok) {
+          if (uploadedMedia.length) {
+            await supabase.storage
+              .from(listingMediaBucket)
+              .remove(uploadedMedia.map((item) => item.path));
+          }
+
+          let errorMessage = "Nao rolou publicar agora. Tenta de novo em instantes.";
+
+          try {
+            const payload = (await response.json()) as { error?: string };
+            errorMessage = payload.error ?? errorMessage;
+          } catch {
+            // Keep the default message when the API response is not JSON.
+          }
+
           setMessage({
             tone: "error",
-            text: "Nao rolou publicar agora. Tenta de novo em instantes.",
+            text: errorMessage,
           });
+
+          if (response.status === 409) {
+            setActionGuard({
+              mode: "insufficient",
+            });
+          }
           return;
+        }
+
+        const payload = (await response.json()) as {
+          tokenCost?: number;
+          tokenBalance?: number | null;
+        };
+        const spentTokens = payload.tokenCost ?? listingMonetization.amount;
+        const nextTokenBalance =
+          payload.tokenBalance ?? remainingTokenBalance ?? tokenBalance;
+
+        if (typeof nextTokenBalance === "number") {
+          setTokenBalance(nextTokenBalance);
         }
 
         setMessage({
           tone: "success",
           text:
             draft.intent === "request"
-              ? "Demanda publicada. Agora e esperar as propostas aparecerem."
-              : "Oferta publicada. Te vejo no feed.",
+              ? `Demanda publicada. Voce usou ${spentTokens} token${spentTokens > 1 ? "s" : ""}.`
+              : `Anuncio publicado. Voce usou ${spentTokens} token${spentTokens > 1 ? "s" : ""}.`,
         });
 
-        router.push("/feed?publicado=1");
-        router.refresh();
+        window.setTimeout(() => {
+          const params = new URLSearchParams({ publicado: "1" });
+
+          if (typeof nextTokenBalance === "number") {
+            params.set("saldo", String(nextTokenBalance));
+          }
+
+          router.push(`/feed?${params.toString()}`);
+          router.refresh();
+        }, 900);
       })();
     });
   }
@@ -791,6 +875,22 @@ export function ListingComposer({
             </Link>
           </div>
         )}
+
+        <div className="status-banner" data-tone={remainingTokenBalance !== null && remainingTokenBalance < 0 ? "error" : "info"}>
+          <strong>
+            {tokenBalance === null
+              ? `Criar este anuncio consome ${listingMonetization.amount} token${listingMonetization.amount > 1 ? "s" : ""}.`
+              : `Voce tem ${tokenBalance} tokens.`}
+          </strong>{" "}
+          {listingMonetization.tier === "premium" ? "Anuncio premium" : "Anuncio simples"} · criar este anuncio consome{" "}
+          {listingMonetization.amount} token{listingMonetization.amount > 1 ? "s" : ""}.{" "}
+          {tokenSummary?.planType === "pro"
+            ? "Usuarios Pro recebem 40 tokens por mes."
+            : "Compre mais tokens ou assine o plano Pro se precisar de mais saldo."}
+          {remainingTokenBalance !== null ? (
+            <> Depois da publicacao, ficam {Math.max(remainingTokenBalance, 0)} token{Math.max(remainingTokenBalance, 0) !== 1 ? "s" : ""}.</>
+          ) : null}
+        </div>
 
         <form className="form-grid" onSubmit={handleSubmit}>
           <div className="field">
@@ -1420,6 +1520,20 @@ export function ListingComposer({
           <span>{negotiationModeLabels[draft.negotiationMode]}</span>
         </div>
 
+        {tokenBalance !== null ? (
+          <p className="preview-note">
+            <strong>Saldo atual:</strong> {tokenBalance} token
+            {tokenBalance > 1 ? "s" : ""}
+          </p>
+        ) : null}
+
+        <p className="preview-note">
+          <strong>
+            {listingMonetization.tier === "premium" ? "Anuncio premium" : "Anuncio simples"}
+          </strong>{" "}
+          · {listingMonetization.amount} token{listingMonetization.amount > 1 ? "s" : ""}
+        </p>
+
         <p className="preview-note">
           {draft.deliveryMode || getDefaultDeliveryMode(draft.intent, draft.type, draft.category)}
         </p>
@@ -1465,6 +1579,17 @@ export function ListingComposer({
           <ArrowRight size={18} />
         </Link>
       </aside>
+
+      <TokenActionModal
+        open={Boolean(actionGuard)}
+        mode={actionGuard?.mode}
+        title="Saldo insuficiente"
+        description="Criar este anuncio agora consome tokens, mas teu saldo nao cobre essa publicacao."
+        cost={listingMonetization.amount}
+        balance={tokenBalance}
+        helperText="Compra avulsa de tokens resolve agora. O plano Pro libera 40 tokens por mes."
+        onClose={() => setActionGuard(null)}
+      />
     </div>
   );
 }

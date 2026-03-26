@@ -1,0 +1,268 @@
+@use "../../styles/design-system" as *;
+
+.shell {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.hero {
+  @include panel-shell($padding: 1rem, $radius: 1.08rem);
+  gap: 0.9rem;
+}
+
+.heroTop,
+.heroActions,
+.sectionHeader,
+.historyHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.heroCopy {
+  display: grid;
+  gap: 0.25rem;
+
+  h1 {
+    margin: 0;
+    font-family: var(--font-display), sans-serif;
+    font-size: clamp(1.86rem, 2.7vw, 2.45rem);
+    letter-spacing: -0.06em;
+    line-height: 0.96;
+  }
+
+  p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+}
+
+.heroPlan {
+  @include subtle-pill($min-height: 2.3rem, $padding-y: 0.38rem, $padding-x: 0.74rem);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.summaryGrid,
+.detailsGrid,
+.compareGrid,
+.historyGrid {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.summaryGrid {
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.detailsGrid {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+}
+
+.historyGrid {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+}
+
+.card,
+.metricCard,
+.historyCard,
+.compareCard,
+.emptyCard {
+  @include panel-card($padding: 0.94rem, $radius: 1rem);
+  gap: 0.72rem;
+}
+
+.metricCard {
+  gap: 0.18rem;
+
+  span {
+    color: var(--muted);
+    font-size: 0.76rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  strong {
+    font-family: var(--font-display), sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: -0.05em;
+  }
+}
+
+.sectionHeader,
+.historyHeader {
+  align-items: flex-start;
+
+  strong {
+    font-family: var(--font-display), sans-serif;
+    font-size: 1.04rem;
+    letter-spacing: -0.03em;
+  }
+
+  span {
+    color: var(--muted);
+    line-height: 1.45;
+  }
+}
+
+.tokenCosts {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.tokenCostRow,
+.historyRow,
+.paymentRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.historyList,
+.paymentList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.historyCopy,
+.paymentCopy {
+  display: grid;
+  gap: 0.12rem;
+
+  strong,
+  p {
+    margin: 0;
+  }
+
+  p {
+    color: var(--muted);
+    line-height: 1.5;
+  }
+}
+
+.historyAmount,
+.paymentAmount {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2rem;
+  padding: 0.32rem 0.64rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-elevated) 76%, transparent);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.credit {
+  color: var(--success);
+}
+
+.debit {
+  color: var(--accent);
+}
+
+.compareGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.compareCard {
+  gap: 0.85rem;
+  width: 100%;
+  text-align: left;
+
+  &[aria-pressed] {
+    cursor: pointer;
+    @include pressable(
+      $hover-translate: -1px,
+      $hover-border: color-mix(in srgb, var(--accent) 18%, var(--line))
+    );
+  }
+
+  &[aria-pressed="true"] {
+    border-color: color-mix(in srgb, var(--accent) 24%, var(--line));
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--accent) 10%, transparent),
+        color-mix(in srgb, var(--surface) 96%, transparent)
+      );
+  }
+}
+
+.compareHead {
+  display: grid;
+  gap: 0.18rem;
+
+  strong {
+    font-family: var(--font-display), sans-serif;
+    font-size: 1.08rem;
+    letter-spacing: -0.04em;
+  }
+
+  span {
+    color: var(--muted);
+    line-height: 1.45;
+  }
+}
+
+.featureList {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--text);
+    line-height: 1.45;
+  }
+}
+
+.bullet {
+  display: grid;
+  place-items: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  flex: 0 0 auto;
+}
+
+.helper {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+@media (max-width: 980px) {
+  .detailsGrid,
+  .historyGrid,
+  .compareGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .heroTop,
+  .heroActions,
+  .sectionHeader,
+  .historyHeader,
+  .tokenCostRow,
+  .historyRow,
+  .paymentRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .heroActions :global(.primary-button),
+  .heroActions :global(.secondary-button) {
+    width: 100%;
+  }
+}

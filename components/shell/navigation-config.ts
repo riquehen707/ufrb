@@ -3,6 +3,7 @@ import {
   BriefcaseBusiness,
   BusFront,
   CircleUserRound,
+  Coins,
   Compass,
   GraduationCap,
   HandCoins,
@@ -162,7 +163,7 @@ function getFeedContext(searchParams: SearchParamReader): NavigationContext {
       },
       {
         href: "/essenciais",
-        label: "Abrir essenciais",
+        label: "Abrir explorar",
         description: "Grupos, moradia e rotas.",
         icon: LayoutGrid,
       },
@@ -172,8 +173,8 @@ function getFeedContext(searchParams: SearchParamReader): NavigationContext {
 
 function getEssentialsContext(): NavigationContext {
   return {
-    label: "Essenciais",
-    title: "Essenciais",
+    label: "Explorar",
+    title: "Explorar",
     description: "Grupos, moradia e transporte em um ponto rapido.",
     icon: LayoutGrid,
     actions: [
@@ -660,39 +661,16 @@ function getProfileContext(pathname: string): NavigationContext {
         icon: Store,
       },
       {
+        href: "/tokens",
+        label: "Planos e tokens",
+        description: "Saldo e recarga.",
+        icon: Coins,
+      },
+      {
         href: "/chat",
         label: "Falar com estudante",
         description: "Ir para conversas.",
         icon: MessageSquareText,
-      },
-    ],
-  };
-}
-
-function getDonationContext(): NavigationContext {
-  return {
-    label: "Apoiar",
-    title: "Apoiar",
-    description: "Acoes rapidas.",
-    icon: HandCoins,
-    actions: [
-      {
-        href: "/feed",
-        label: "Ir para o feed",
-        description: "Abrir feed.",
-        icon: Compass,
-      },
-      {
-        href: "/perfil",
-        label: "Minha conta",
-        description: "Ir para tua conta.",
-        icon: CircleUserRound,
-      },
-      {
-        href: buildAnnounceHref({ intent: "offer" }),
-        label: "Publicar produto",
-        description: "Criar anuncio.",
-        icon: SquarePen,
       },
     ],
   };
@@ -707,7 +685,7 @@ export const fixedMobileNavItems: NavigationItem[] = [
   },
   {
     href: "/essenciais",
-    label: "Essenciais",
+    label: "Explorar",
     icon: LayoutGrid,
     match: matchesPrefix("/essenciais"),
   },
@@ -728,14 +706,14 @@ export const fixedMobileNavItems: NavigationItem[] = [
 export const desktopNavItems: NavigationItem[] = [
   {
     href: "/essenciais",
-    label: "Essenciais",
+    label: "Explorar",
     meta: "Rotina e grupos",
     icon: LayoutGrid,
     match: matchesPrefix("/essenciais"),
   },
   {
     href: "/trabalhos",
-    label: "Trabalhos",
+    label: "Vender",
     meta: "Aulas e servicos",
     icon: BriefcaseBusiness,
     match: matchesPrefix("/trabalhos"),
@@ -796,10 +774,6 @@ export function getNavigationContext({
 
   if (pathname.startsWith("/perfil")) {
     return getProfileContext(pathname);
-  }
-
-  if (pathname.startsWith("/doar")) {
-    return getDonationContext();
   }
 
   return defaultNavigationContext;

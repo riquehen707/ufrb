@@ -7,6 +7,7 @@ import { getMarketplaceDataWithOptions } from "@/lib/marketplace";
 type FeedPageProps = {
   searchParams: Promise<{
     publicado?: string | string[] | undefined;
+    saldo?: string | string[] | undefined;
     q?: string | string[] | undefined;
     mode?: string | string[] | undefined;
     type?: string | string[] | undefined;
@@ -65,6 +66,11 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
   const marketplace = await getMarketplaceDataWithOptions({ limit: 18 });
   const query = await searchParams;
   const hasNewListing = readSingleValue(query.publicado) === "1";
+  const tokenBalance = Number(readSingleValue(query.saldo));
+  const publishedNoticeLabel =
+    hasNewListing && Number.isFinite(tokenBalance)
+      ? `Anuncio publicado. Voce ficou com ${tokenBalance} token${tokenBalance === 1 ? "" : "s"}.`
+      : undefined;
   const initialExplorerState = {
     query: readSingleValue(query.q) ?? "",
     workspace: readWorkspace(query.mode),
@@ -99,6 +105,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
             publicado: hasNewListing ? "1" : undefined,
           }}
           publishedNotice={hasNewListing}
+          publishedNoticeLabel={publishedNoticeLabel}
           layoutMode="lanes"
         />
       </div>

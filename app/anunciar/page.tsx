@@ -8,6 +8,7 @@ import {
   type ListingIntent,
   type ListingType,
 } from "@/lib/listing-taxonomy";
+import { getCurrentProfile } from "@/lib/profiles";
 
 type PublishPageProps = {
   searchParams: Promise<{
@@ -60,6 +61,7 @@ function readCategory(
 
 export default async function PublishPage({ searchParams }: PublishPageProps) {
   const params = await searchParams;
+  const { profile } = await getCurrentProfile();
   const initialIntent = readIntent(params.intent);
   const initialType = readType(params.type);
   const resolvedType = initialType ?? "service";
@@ -82,6 +84,14 @@ export default async function PublishPage({ searchParams }: PublishPageProps) {
           initialIntent={initialIntent}
           initialType={initialType}
           initialCategory={initialCategory}
+          tokenSummary={
+            profile
+              ? {
+                  tokenBalance: profile.tokenBalance,
+                  planType: profile.planType,
+                }
+              : null
+          }
         />
       </div>
     </PageShell>

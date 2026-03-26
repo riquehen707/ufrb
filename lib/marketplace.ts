@@ -94,6 +94,7 @@ export async function getMarketplaceDataWithOptions(options?: {
       .select(listingSelect)
       .eq("status", "active")
       .order("featured", { ascending: false })
+      .order("priority_boost", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(limit);
 

@@ -11,8 +11,17 @@ import {
   isRouteActive,
 } from "@/components/shell/navigation-config";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
+import { TokenBalanceChip } from "@/components/tokens/token-balance-chip";
+import type { PlanType } from "@/lib/monetization/types";
 
-export function SiteHeader() {
+type Props = {
+  accountSummary?: {
+    tokenBalance: number;
+    planType: PlanType;
+  } | null;
+};
+
+export function SiteHeader({ accountSummary = null }: Props) {
   const pathname = usePathname();
 
   return (
@@ -56,6 +65,12 @@ export function SiteHeader() {
               hiddenWhenInstalled
               labelOverride="Instalar"
             />
+            {accountSummary ? (
+              <TokenBalanceChip
+                tokenBalance={accountSummary.tokenBalance}
+                planType={accountSummary.planType}
+              />
+            ) : null}
             <Link href="/perfil" className="shell-header-badge">
               Conta
             </Link>
