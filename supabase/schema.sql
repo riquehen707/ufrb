@@ -5,6 +5,7 @@ drop function if exists public.credit_profile_tokens(uuid, integer, text, uuid, 
 drop function if exists public.debit_profile_tokens(uuid, integer, text, uuid, text);
 drop function if exists public.grant_monthly_tokens(uuid, integer, text);
 drop function if exists public.grant_monthly_tokens_if_eligible();
+drop function if exists public.finalize_paid_payment_grant(uuid, timestamptz, timestamptz, text);
 drop function if exists public.create_listing_with_tokens(uuid, jsonb, integer, text, text);
 drop function if exists public.renew_listing_with_tokens(uuid, uuid, integer, text, integer);
 drop function if exists public.feature_listing_with_tokens(uuid, uuid, integer, text, integer);
@@ -1150,6 +1151,126 @@ begin
   into updated_listing;
 
   return updated_listing;
+end;
+$$;
+
+-- This RPC finalizes a paid platform payment exactly once. Keeping the credit,
+-- profile/subscription updates and granted_at write in the same transaction
+-- protects against duplicated webhooks and race conditions.
+create or replace function public.finalize_paid_payment_grant(
+  target_payment_id uuid,
+  subscription_period_start timestamptz default null,
+  subscription_period_end timestamptz default null,
+  activation_note text default null
+)
+returns public.payments
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  acting_role text;
+  locked_payment public.payments%rowtype;
+  finalized_payment public.payments%rowtype;
+  subscription_token_amount integer;
+begin
+  acting_role := coalesce(auth.jwt() ->> 'role', '');
+
+  if acting_role <> 'service_role' then
+    raise exception 'Nao autorizado para finalizar pagamentos.';
+  end if;
+
+  select *
+  into locked_payment
+  from public.payments
+  where id = target_payment_id
+  for update;
+
+  if not found then
+    raise exception 'Pagamento nao encontrado para finalizacao.';
+  end if;
+
+  if locked_payment.status <> 'paid' then
+    return locked_payment;
+  end if;
+
+  if locked_payment.granted_at is not null then
+    return locked_payment;
+  end if;
+
+  if locked_payment.kind = 'token_package' then
+    perform public.credit_profile_tokens(
+      locked_payment.profile_id,
+      locked_payment.token_amount,
+      'token_package_purchase',
+      locked_payment.id,
+      format(
+        'Pacote %s confirmado via PicPay.',
+        coalesce(locked_payment.package_code, 'tokens')
+      )
+    );
+  elsif locked_payment.kind = 'subscription' then
+    if locked_payment.subscription_id is null then
+      raise exception 'Assinatura nao encontrada para esse pagamento.';
+    end if;
+
+    select coalesce(token_grant_amount, 40)
+    into subscription_token_amount
+    from public.subscriptions
+    where id = locked_payment.subscription_id
+    for update;
+
+    update public.profiles
+    set
+      plan_type = 'pro',
+      monthly_token_last_granted_at = now(),
+      updated_at = now()
+    where id = locked_payment.profile_id;
+
+    update public.subscriptions
+    set
+      status = 'active',
+      badge_enabled = true,
+      current_period_start = coalesce(subscription_period_start, now()),
+      current_period_end = coalesce(subscription_period_end, current_period_end),
+      updated_at = now()
+    where id = locked_payment.subscription_id;
+
+    update public.listings
+    set
+      priority_boost = 1,
+      updated_at = now()
+    where owner_id = locked_payment.profile_id
+      and status = 'active';
+
+    perform public.credit_profile_tokens(
+      locked_payment.profile_id,
+      coalesce(nullif(locked_payment.token_amount, 0), subscription_token_amount, 40),
+      'subscription_grant',
+      coalesce(locked_payment.subscription_id, locked_payment.id),
+      coalesce(activation_note, 'Plano Pro ativado via Pix.')
+    );
+  else
+    raise exception 'Tipo de pagamento invalido para finalizacao.';
+  end if;
+
+  update public.payments
+  set
+    granted_at = now(),
+    updated_at = now()
+  where id = target_payment_id
+    and granted_at is null
+  returning *
+  into finalized_payment;
+
+  if finalized_payment.id is null then
+    select *
+    into finalized_payment
+    from public.payments
+    where id = target_payment_id;
+  end if;
+
+  return finalized_payment;
 end;
 $$;
 

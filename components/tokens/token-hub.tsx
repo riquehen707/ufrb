@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { ArrowRight, Coins, Crown, History, Wallet } from "lucide-react";
+import {
+  ArrowRight,
+  Coins,
+  Crown,
+  History,
+  ShieldCheck,
+  Wallet,
+} from "lucide-react";
 
 import { AuthPanel } from "@/components/auth/auth-panel";
 import { TokenCheckoutPanel } from "@/components/tokens/token-checkout-panel";
@@ -200,6 +207,25 @@ export function TokenHub({ dashboard }: Props) {
           </div>
         ) : null}
 
+        <div className={styles.heroFacts}>
+          <div className={styles.heroFact}>
+            <Coins size={14} />
+            <span>{freePlan.initialTokenGrant} tokens ao entrar</span>
+          </div>
+          <div className={styles.heroFact}>
+            <History size={14} />
+            <span>
+              {profile.planType === "pro"
+                ? `${proPlan.monthlyTokenGrant} por ciclo Pro`
+                : `${freePlan.monthlyTokenGrant} por mes no Free`}
+            </span>
+          </div>
+          <div className={styles.heroFact}>
+            <ShieldCheck size={14} />
+            <span>Pix libera saldo so depois da confirmacao</span>
+          </div>
+        </div>
+
         <div className={styles.summaryGrid}>
           <article className={styles.metricCard}>
             <span>Saldo atual</span>
@@ -394,11 +420,21 @@ export function TokenHub({ dashboard }: Props) {
               {transactions.map((transaction) => (
                 <article key={transaction.id} className={styles.historyRow}>
                   <div className={styles.historyCopy}>
-                    <strong>
-                      {tokenTransactionReasonLabels[
-                        transaction.reason as keyof typeof tokenTransactionReasonLabels
-                      ] ?? transaction.reason}
-                    </strong>
+                    <div className={styles.rowMeta}>
+                      <strong>
+                        {tokenTransactionReasonLabels[
+                          transaction.reason as keyof typeof tokenTransactionReasonLabels
+                        ] ?? transaction.reason}
+                      </strong>
+                      <span
+                        className="status-pill"
+                        data-tone={
+                          transaction.type === "credit" ? "success" : "warning"
+                        }
+                      >
+                        {transaction.type === "credit" ? "Entrada" : "Saida"}
+                      </span>
+                    </div>
                     <p>
                       {transaction.note ?? "Movimento registrado no saldo."} -{" "}
                       {formatDate(transaction.createdAt)}
@@ -436,7 +472,12 @@ export function TokenHub({ dashboard }: Props) {
               {payments.map((payment) => (
                 <article key={payment.id} className={styles.paymentRow}>
                   <div className={styles.paymentCopy}>
-                    <strong>{getPaymentTitle(payment, proPlan.monthlyTokenGrant)}</strong>
+                    <div className={styles.rowMeta}>
+                      <strong>{getPaymentTitle(payment, proPlan.monthlyTokenGrant)}</strong>
+                      <span className="status-pill" data-tone="info">
+                        {paymentStatusLabels[payment.status]}
+                      </span>
+                    </div>
                     <p>{getPaymentCopy(payment, proPlan.monthlyTokenGrant)}</p>
                   </div>
                   <span className={styles.paymentAmount}>

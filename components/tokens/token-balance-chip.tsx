@@ -8,17 +8,19 @@ type Props = {
   tokenBalance: number;
   planType: PlanType;
   href?: string;
+  className?: string;
 };
 
 export function TokenBalanceChip({
   tokenBalance,
   planType,
   href = "/tokens",
+  className,
 }: Props) {
   return (
     <Link
       href={href}
-      className={styles.chip}
+      className={className ? `${styles.chip} ${className}` : styles.chip}
       aria-label={`Voce tem ${tokenBalance} tokens`}
       title="Abrir planos e tokens"
     >

@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Copy, Crown, LoaderCircle, QrCode } from "lucide-react";
+import {
+  Check,
+  Copy,
+  Crown,
+  LoaderCircle,
+  QrCode,
+  Sparkles,
+} from "lucide-react";
 
 import styles from "@/components/tokens/token-hub.module.scss";
 import {
@@ -114,6 +121,16 @@ function getBillingValidationMessage(input: {
   return null;
 }
 
+function getPackageUsageCopy(tokenAmount: number) {
+  const premiumListings = Math.floor(tokenAmount / 2);
+
+  if (premiumListings <= 0) {
+    return `${tokenAmount} anuncios simples`;
+  }
+
+  return `${tokenAmount} simples ou ate ${premiumListings} premium`;
+}
+
 function PixPreview({
   title,
   subtitle,
@@ -144,14 +161,14 @@ function PixPreview({
       {result.qrCodeBase64 ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
+          className={styles.pixImage}
           src={`data:image/png;base64,${result.qrCodeBase64}`}
           alt="QR Code Pix"
-          style={{ width: "100%", maxWidth: "16rem", borderRadius: "16px" }}
         />
       ) : null}
 
       {result.qrCode ? (
-        <div className={styles.card}>
+        <div className={styles.pixCodeCard}>
           <div className={styles.historyCopy}>
             <strong>Copia e cola</strong>
             <p>{result.qrCode}</p>
@@ -411,6 +428,9 @@ export function TokenCheckoutPanel({
           <strong>Comprar saldo e Pro</strong>
           <span>Compra avulsa por Pix para manter o ritmo ou ativar 30 dias de Pro.</span>
         </div>
+        <span className="status-pill" data-tone="info">
+          {profile.tokenBalance} token{profile.tokenBalance > 1 ? "s" : ""}
+        </span>
       </div>
 
       {purchaseMessage ? (
@@ -485,33 +505,40 @@ export function TokenCheckoutPanel({
         </p>
       </section>
 
-      <div className={styles.compareGrid}>
+      <div className={styles.packageGrid}>
         {Object.values(TOKEN_PACKAGES).map((entry) => (
           <button
             key={entry.code}
             type="button"
-            className={styles.compareCard}
+            className={styles.packageCard}
             onClick={() => setPackageCode(entry.code)}
             aria-pressed={packageCode === entry.code}
           >
-            <div className={styles.compareHead}>
-              <strong>{entry.label}</strong>
-              <span>{moneyFormatter.format(entry.amountCents / 100)}</span>
+            <div className={styles.packageHead}>
+              <div>
+                <strong>{entry.tokenAmount}</strong>
+                <span>tokens</span>
+              </div>
+              {packageCode === entry.code ? (
+                <span className="status-pill" data-tone="success">
+                  Selecionado
+                </span>
+              ) : null}
             </div>
-            <ul className={styles.featureList}>
-              <li>
-                <span className={styles.bullet}>
-                  <Check size={12} />
-                </span>
-                Compra unica, sem assinatura
-              </li>
-              <li>
-                <span className={styles.bullet}>
-                  <Check size={12} />
-                </span>
-                Entra no saldo assim que o Pix confirmar
-              </li>
-            </ul>
+            <strong className={styles.packagePrice}>
+              {moneyFormatter.format(entry.amountCents / 100)}
+            </strong>
+            <p className={styles.packageHint}>{getPackageUsageCopy(entry.tokenAmount)}</p>
+            <div className={styles.packageMeta}>
+              <span>
+                <Check size={12} />
+                Compra unica
+              </span>
+              <span>
+                <Sparkles size={12} />
+                Pix confirmado
+              </span>
+            </div>
           </button>
         ))}
       </div>
@@ -531,6 +558,15 @@ export function TokenCheckoutPanel({
           Esse pacote libera {selectedPackage.tokenAmount} tokens assim que o Pix confirmar.
         </p>
 
+        <div className={styles.checkoutSummary}>
+          <span>
+            <strong>{selectedPackage.tokenAmount}</strong> tokens no saldo
+          </span>
+          <span>
+            <strong>{getPackageUsageCopy(selectedPackage.tokenAmount)}</strong>
+          </span>
+        </div>
+
         <div className={styles.heroActions}>
           <button
             type="button"
@@ -546,7 +582,7 @@ export function TokenCheckoutPanel({
             ) : (
               <>
                 <QrCode size={16} />
-                Comprar {selectedPackage.label}
+                Gerar Pix do pacote
               </>
             )}
           </button>
@@ -594,9 +630,20 @@ export function TokenCheckoutPanel({
             </p>
           </div>
         ) : (
-          <p className={styles.helper}>
-            O Pro libera 40 tokens, selo visual e prioridade moderada por 30 dias.
-          </p>
+          <ul className={styles.featureList}>
+            <li>
+              <span className={styles.bullet}>
+                <Crown size={12} />
+              </span>
+              40 tokens por ciclo pago
+            </li>
+            <li>
+              <span className={styles.bullet}>
+                <Crown size={12} />
+              </span>
+              Selo visual e prioridade moderada
+            </li>
+          </ul>
         )}
 
         <div className={styles.heroActions}>

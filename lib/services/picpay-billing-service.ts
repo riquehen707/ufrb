@@ -12,13 +12,11 @@ import {
 } from "@/lib/payments/picpay/client";
 import type { PicPayWebhookEvent } from "@/lib/payments/picpay/types";
 import {
-  activateProPlan,
+  finalizePaidPaymentGrant,
   findLatestProSubscriptionForProfile,
   findPaymentByMerchantChargeId,
   findPaymentByProviderPaymentId,
   findSubscriptionById,
-  grantTokenPackagePurchase,
-  markPaymentGranted,
   recordPayment,
   updatePaymentState,
   upsertSubscription,
@@ -48,27 +46,12 @@ async function finalizeGrantedPayment(
     return payment;
   }
 
-  if (payment.kind === "token_package") {
-    await grantTokenPackagePurchase({
-      paymentId: payment.id,
-      profileId: payment.profile_id,
-      tokenAmount: payment.token_amount,
-      note: `Pacote ${payment.package_code ?? "tokens"} confirmado via PicPay.`,
-    });
-  } else {
-    await activateProPlan({
-      profileId: payment.profile_id,
-      subscriptionId: payment.subscription_id,
-      paymentId: payment.id,
-      tokenAmount: payment.token_amount || getPlanConfig("pro").monthlyTokenGrant,
-      note: options?.note ?? "Plano Pro ativado via Pix.",
-      currentPeriodStart: options?.subscriptionPeriodStart ?? null,
-      currentPeriodEnd: options?.subscriptionPeriodEnd ?? null,
-    });
-  }
-
-  const grantedPayment = await markPaymentGranted(payment.id);
-  return grantedPayment ?? payment;
+  return finalizePaidPaymentGrant({
+    paymentId: payment.id,
+    subscriptionPeriodStart: options?.subscriptionPeriodStart ?? null,
+    subscriptionPeriodEnd: options?.subscriptionPeriodEnd ?? null,
+    note: options?.note ?? null,
+  });
 }
 
 export async function createTokenPackageCheckout(input: {

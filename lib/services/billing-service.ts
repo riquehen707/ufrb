@@ -374,6 +374,33 @@ export async function markPaymentGranted(paymentId: string) {
   return (data as BillingPaymentRow | null) ?? null;
 }
 
+export async function finalizePaidPaymentGrant(input: {
+  paymentId: string;
+  subscriptionPeriodStart?: string | null;
+  subscriptionPeriodEnd?: string | null;
+  note?: string | null;
+}) {
+  const supabase = getAdminClientOrThrow();
+  const { data, error } = await supabase.rpc("finalize_paid_payment_grant", {
+    target_payment_id: input.paymentId,
+    subscription_period_start: input.subscriptionPeriodStart ?? null,
+    subscription_period_end: input.subscriptionPeriodEnd ?? null,
+    activation_note: input.note ?? null,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+
+  if (!row) {
+    throw new Error("PAYMENT_FINALIZE_EMPTY");
+  }
+
+  return row as BillingPaymentRow;
+}
+
 export async function syncProfilePlanState(input: {
   profileId: string;
   planType: PlanType;

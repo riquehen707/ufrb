@@ -2,16 +2,16 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarClock, Sparkles } from "lucide-react";
+import { CalendarClock, Coins, Sparkles } from "lucide-react";
 
 import styles from "@/components/profile/profile-listing-actions.module.scss";
 import { TokenActionModal } from "@/components/tokens/token-action-modal";
 import type { Listing } from "@/lib/listings";
-import type { PlanType } from "@/lib/monetization/types";
 import {
   getFeatureListingTokenCost,
   getRenewListingTokenCost,
 } from "@/lib/monetization/token-costs";
+import type { PlanType } from "@/lib/monetization/types";
 
 type PaidAction = "renew" | "feature";
 
@@ -169,7 +169,9 @@ export function ProfileListingActions({
           <span>Renova ou destaca teus anuncios sem sair do painel.</span>
         </div>
         <span className={styles.tokenSummary}>
-          {balance} token{balance > 1 ? "s" : ""} · {planType === "pro" ? "Pro" : "Free"}
+          <Coins size={14} />
+          {balance} token{balance > 1 ? "s" : ""} -{" "}
+          {planType === "pro" ? "Pro" : "Free"}
         </span>
       </div>
 
@@ -206,16 +208,33 @@ export function ProfileListingActions({
                 className={styles.actionButton}
                 onClick={() => openAction(listing.id, "renew")}
               >
-                <CalendarClock size={15} />
-                Renovar · {renewalCost.amount} token
+                <span className={styles.actionCopy}>
+                  <span className={styles.actionTitle}>
+                    <CalendarClock size={15} />
+                    Renovar por 30 dias
+                  </span>
+                  <span className={styles.actionHint}>Mantem o anuncio circulando</span>
+                </span>
+                <span className={styles.actionCost}>
+                  {renewalCost.amount} token
+                </span>
               </button>
+
               <button
                 type="button"
                 className={styles.actionButton}
                 onClick={() => openAction(listing.id, "feature")}
               >
-                <Sparkles size={15} />
-                Destacar · {featureCost.amount} token
+                <span className={styles.actionCopy}>
+                  <span className={styles.actionTitle}>
+                    <Sparkles size={15} />
+                    Destacar por 7 dias
+                  </span>
+                  <span className={styles.actionHint}>Aumenta a prioridade no feed</span>
+                </span>
+                <span className={styles.actionCost}>
+                  {featureCost.amount} token
+                </span>
               </button>
             </div>
           </article>

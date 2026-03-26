@@ -69,6 +69,7 @@ export function SiteHeader({ accountSummary = null }: Props) {
               <TokenBalanceChip
                 tokenBalance={accountSummary.tokenBalance}
                 planType={accountSummary.planType}
+                className="shell-token-chip"
               />
             ) : null}
             <Link href="/perfil" className="shell-header-badge">
